@@ -73,3 +73,20 @@ class ComentarioRead(BaseModel):
 
     class Config:
         from_attributes = True
+
+class HistorialRead(BaseModel):
+    id_historial: int
+    id_tarea: int
+    estado_anterior: EstadoTarea | None
+    estado_nuevo: EstadoTarea
+    fecha_cambio: datetime
+    id_usuario: int
+    comentario: str | None = None
+
+    class Config:
+        from_attributes = True
+
+
+class CambiarEstadoRequest(BaseModel):
+    estado: EstadoTarea
+    comentario: str | None = Field(default=None, max_length=255)

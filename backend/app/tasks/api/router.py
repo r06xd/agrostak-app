@@ -1,5 +1,7 @@
 from fastapi import APIRouter, Depends, status
 from sqlalchemy.orm import Session
+from app.tasks.domain.schemas import HistorialRead, CambiarEstadoRequest
+
 
 from app.shared.db import get_session
 from app.identity.api.deps import get_current_user
@@ -59,3 +61,15 @@ def add_comment(id_tarea: int, data: ComentarioCreate, db: Session = Depends(get
 @router.get("/{id_tarea}/comments", response_model=list[ComentarioRead])
 def list_comments(id_tarea: int, db: Session = Depends(get_session), _=Depends(get_current_user)):
     return services.listar_comentarios(db, id_tarea)
+
+@router.get("/my", response_model=list[TareaRead])
+def my_tasks(db: Session = Depends(get_session), user=Depends(get_current_user)):
+    return services.mis_tareas(db, id_usuario=user.id_usuario)
+
+@router.get("/{id_tarea}/history", response_model=list[HistorialRead])
+def task_history(id_tarea: int, db: Session = Depends(get_session), _=Depends(get_current_user)):
+    return services.obtener_historial(db, id_tarea)
+
+@router.post("/{id_tarea}/status", response_model=TareaRead)
+def change_status(id_tarea: int, data: CambiarEstadoRequest, db: Session = Depends(get_session), user=Depends(get_current_user)):
+    return services.cambiar_estado(db, id_tarea, data, id_usuario=user.id_usuario)

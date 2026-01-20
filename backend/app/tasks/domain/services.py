@@ -1,6 +1,8 @@
 from fastapi import HTTPException, status
 from sqlalchemy.orm import Session
 from datetime import datetime
+from app.tasks.domain.schemas import HistorialRead, CambiarEstadoRequest
+from app.tasks.infra.models import HistorialEstadoTareaORM
 
 from app.tasks.domain.schemas import (
     TareaCreate, TareaUpdate, TareaRead,
@@ -167,3 +169,47 @@ def listar_comentarios(db: Session, id_tarea: int) -> list[ComentarioRead]:
     if not tarea:
         raise HTTPException(status_code=404, detail="Tarea no encontrada.")
     return [ComentarioRead.model_validate(c) for c in repo.list_comentarios(id_tarea)]
+
+def obtener_historial(db: Session, id_tarea: int) -> list[HistorialRead]:
+    repo = TasksRepository(db)
+
+    tarea = repo.get_tarea(id_tarea)
+    if not tarea:
+        raise HTTPException(status_code=404, detail="Tarea no encontrada.")
+
+    historial = repo.list_historial(id_tarea)
+    return [HistorialRead.model_validate(h) for h in historial]
+
+def mis_tareas(db: Session, id_usuario: int) -> list[TareaRead]:
+    repo = TasksRepository(db)
+    tareas = repo.list_tareas_by_assignee(id_usuario)
+    return [TareaRead.model_validate(t) for t in tareas]
+
+def cambiar_estado(db: Session, id_tarea: int, data: CambiarEstadoRequest, id_usuario: int) -> TareaRead:
+    repo = TasksRepository(db)
+    tarea = repo.get_tarea(id_tarea)
+    if not tarea:
+        raise HTTPException(status_code=404, detail="Tarea no encontrada.")
+
+    estado_anterior = tarea.estado
+    tarea.estado = data.estado
+
+    # reglas simples
+    if data.estado == EstadoTarea.completada:
+        tarea.porcentaje_avance = 100
+        if not tarea.fecha_fin_real:
+            tarea.fecha_fin_real = datetime.utcnow()
+
+    updated = repo.update_tarea(tarea)
+
+    repo.add_historial(
+        HistorialEstadoTareaORM(
+            id_tarea=id_tarea,
+            estado_anterior=estado_anterior,
+            estado_nuevo=updated.estado,
+            id_usuario=id_usuario,
+            comentario=data.comentario or "Cambio de estado"
+        )
+    )
+
+    return TareaRead.model_validate(updated)

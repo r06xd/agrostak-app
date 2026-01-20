@@ -190,34 +190,7 @@
                 <th class="actions-col text-end">Acciones</th>
               </tr>
             </thead>
-            <tbody>
-              <!-- Ejemplos (reemplaza con data real) -->
-              <tr>
-                <td class="fw-semibold">Taladro</td>
-                <td><span class="badge-soft">herramienta</span></td>
-                <td>unidades</td>
-                <td>2.00</td>
-                <td>Bodega 1</td>
-                <td>operativo</td>
-                <td class="text-end">
-                  <button class="btn btn-sm btn-outline-primary" data-action="editar" data-id="1">Editar</button>
-                  <button class="btn btn-sm btn-outline-danger" data-action="eliminar" data-id="1">Eliminar</button>
-                </td>
-              </tr>
-
-              <tr>
-                <td class="fw-semibold">Pintura blanca</td>
-                <td><span class="badge-soft">insumo</span></td>
-                <td>lt</td>
-                <td>15.50</td>
-                <td>Estante A</td>
-                <td>mantenimiento</td>
-                <td class="text-end">
-                  <button class="btn btn-sm btn-outline-primary" data-action="editar" data-id="2">Editar</button>
-                  <button class="btn btn-sm btn-outline-danger" data-action="eliminar" data-id="2">Eliminar</button>
-                </td>
-              </tr>
-            </tbody>
+            <tbody id="tbodyRecursos"></tbody>
           </table>
         </div>
 
@@ -233,68 +206,110 @@
   <!-- JS -->
   <script src="../js/jquery.min.js"></script>
   <script src="../js/bootstrap.bundle.min.js"></script>
+  <script src="../js/config.js"></script>
+  <script src="../js/api.js"></script>
+  <script src="../js/auth.js"></script>
+  <script src="../js/recursos.service.js"></script>
 
   <script>
-    // Filtro simple en cliente (para demo)
-    const busqueda = document.getElementById('busqueda');
-    const filtroTipo = document.getElementById('filtroTipo');
-    const filtroEstado = document.getElementById('filtroEstado');
-    const btnLimpiar = document.getElementById('btnLimpiarFiltros');
-    const tabla = document.getElementById('tablaRecursos').querySelector('tbody');
+  requireAuthOrRedirect();
 
-    function normalizar(v){ return (v || '').toString().toLowerCase().trim(); }
+  const tbody = document.getElementById("tbodyRecursos");
+  const busqueda = document.getElementById("busqueda");
+  const filtroTipo = document.getElementById("filtroTipo");
+  const filtroEstado = document.getElementById("filtroEstado");
 
-    function aplicarFiltros(){
-      const q = normalizar(busqueda.value);
-      const t = normalizar(filtroTipo.value);
-      const e = normalizar(filtroEstado.value);
+  let recursos = [];
 
-      Array.from(tabla.rows).forEach(row => {
-        const textoFila = normalizar(row.innerText);
-        const tipo = normalizar(row.cells[1]?.innerText);
-        const estado = normalizar(row.cells[5]?.innerText);
+  function n(v){ return (v ?? "").toString().toLowerCase().trim(); }
+  function safe(v){ return (v ?? "").toString(); }
 
-        const okBusqueda = !q || textoFila.includes(q);
-        const okTipo = !t || tipo.includes(t);
-        const okEstado = !e || estado.includes(e);
+  function render(rows){
+    tbody.innerHTML = rows.map(r => `
+      <tr>
+        <td class="fw-semibold">${safe(r.nombre)}</td>
+        <td><span class="badge-soft">${safe(r.tipo)}</span></td>
+        <td>${safe(r.unidad_medida)}</td>
+        <td>${Number(r.cantidad_disponible ?? 0).toFixed(2)}</td>
+        <td>${safe(r.ubicacion)}</td>
+        <td>${safe(r.estado)}</td>
+        <td class="text-end">
+          <button class="btn btn-sm btn-outline-primary" data-action="editar" data-id="${r.id_recurso}">Editar</button>
+          <button class="btn btn-sm btn-outline-danger" data-action="eliminar" data-id="${r.id_recurso}">Eliminar</button>
+        </td>
+      </tr>
+    `).join("");
+  }
 
-        row.style.display = (okBusqueda && okTipo && okEstado) ? '' : 'none';
-      });
+  function aplicarFiltros(){
+    const q = n(busqueda.value);
+    const t = n(filtroTipo.value);
+    const e = n(filtroEstado.value);
+
+    const filtered = recursos.filter(r => {
+      const texto = n(`${r.nombre} ${r.descripcion} ${r.ubicacion}`);
+      const okQ = !q || texto.includes(q);
+      const okT = !t || n(r.tipo) === t;
+      const okE = !e || n(r.estado) === e;
+      return okQ && okT && okE;
+    });
+
+    render(filtered);
+  }
+
+  async function cargar(){
+    try {
+      const data = await recursosList();
+      // soporta array o {data:[...]}
+      recursos = Array.isArray(data) ? data : (data?.data || []);
+      aplicarFiltros();
+    } catch (err) {
+      alert(err.message || "No se pudo cargar recursos");
+    }
+  }
+
+  document.getElementById("btnCrear").addEventListener("click", () => {
+    window.location.href = "./recursos.html"; // crear
+  });
+
+  document.getElementById("btnLimpiarFiltros").addEventListener("click", () => {
+    busqueda.value = "";
+    filtroTipo.value = "";
+    filtroEstado.value = "";
+    aplicarFiltros();
+  });
+
+  busqueda.addEventListener("input", aplicarFiltros);
+  filtroTipo.addEventListener("change", aplicarFiltros);
+  filtroEstado.addEventListener("change", aplicarFiltros);
+
+  document.getElementById("tablaRecursos").addEventListener("click", async (ev) => {
+    const btn = ev.target.closest("button[data-action]");
+    if(!btn) return;
+
+    const action = btn.dataset.action;
+    const id = btn.dataset.id;
+
+    if(action === "editar"){
+      window.location.href = "./recursos.html?id=" + encodeURIComponent(id);
+      return;
     }
 
-    busqueda.addEventListener('input', aplicarFiltros);
-    filtroTipo.addEventListener('change', aplicarFiltros);
-    filtroEstado.addEventListener('change', aplicarFiltros);
+    if(action === "eliminar"){
+      const ok = confirm("¿Seguro que deseas eliminar este recurso?");
+      if(!ok) return;
 
-    btnLimpiar.addEventListener('click', () => {
-      busqueda.value = '';
-      filtroTipo.value = '';
-      filtroEstado.value = '';
-      aplicarFiltros();
-    });
-
-    // Acciones (solo demo)
-    document.getElementById('tablaRecursos').addEventListener('click', (ev) => {
-      const btn = ev.target.closest('button[data-action]');
-      if(!btn) return;
-
-      const action = btn.dataset.action;
-      const id = btn.dataset.id;
-
-      if(action === 'editar'){
-        alert('Editar recurso ID: ' + id);
+      try {
+        await recursosDelete(id);
+        recursos = recursos.filter(r => String(r.id_recurso) !== String(id));
+        aplicarFiltros();
+      } catch (err) {
+        alert(err.message || "No se pudo eliminar");
       }
-      if(action === 'eliminar'){
-        const ok = confirm('¿Seguro que deseas eliminar el recurso ID: ' + id + '?');
-        if(ok) alert('Eliminar recurso ID: ' + id);
-      }
-    });
+    }
+  });
 
-    document.getElementById('btnCrear').addEventListener('click', () => {
-      alert('Ir a crear recurso');
-    });
-
-    aplicarFiltros();
-  </script>
+  cargar();
+</script>
 </body>
 </html>

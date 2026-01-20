@@ -1,4 +1,5 @@
 from sqlalchemy.orm import Session
+from sqlalchemy import desc
 from typing import List, Optional
 
 from app.tasks.infra.models import (
@@ -57,3 +58,21 @@ class TasksRepository:
 
     def list_comentarios(self, id_tarea: int) -> List[ComentarioTareaORM]:
         return self.db.query(ComentarioTareaORM).filter(ComentarioTareaORM.id_tarea == id_tarea).all()
+
+def list_historial(self, id_tarea: int):
+    return (
+        self.db.query(HistorialEstadoTareaORM)
+        .filter(HistorialEstadoTareaORM.id_tarea == id_tarea)
+        .order_by(desc(HistorialEstadoTareaORM.fecha_cambio))
+        .all()
+    )
+
+def list_tareas_by_assignee(self, id_usuario: int):
+    # Join asignaciones -> tareas
+    return (
+        self.db.query(TareaORM)
+        .join(AsignacionTareaORM, AsignacionTareaORM.id_tarea == TareaORM.id_tarea)
+        .filter(AsignacionTareaORM.id_usuario == id_usuario)
+        .filter(AsignacionTareaORM.activo == 1)
+        .all()
+    )
