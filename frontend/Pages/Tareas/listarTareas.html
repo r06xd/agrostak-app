@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Listado de Tareas</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <link rel="stylesheet" href="../../css/bootstrap.min.css">
+  <link rel="stylesheet" href="../../css/style.css">
+  <link rel="stylesheet" href="../../css/responsive.css">
+
+  <style>
+    body{ background:#f5f7fb; }
+    .page-center{ min-height:100vh; display:flex; align-items:center; justify-content:center; padding:24px 12px; }
+    .resource-card{ width:100%; max-width:1100px; border:0; border-radius:16px; box-shadow:0 18px 45px rgba(0,0,0,.12); overflow:hidden; background:#fff; }
+    .resource-card-header{ padding:22px 24px; border-bottom:1px solid rgba(0,0,0,.06); display:flex; gap:16px; align-items:center; justify-content:space-between; flex-wrap:wrap; }
+    .header-left{ display:flex; gap:16px; align-items:center; }
+    .resource-card-header img{ width:130px; height:auto; display:block; }
+    .resource-card-header h4{ margin:0; font-weight:700; letter-spacing:.2px; }
+    .resource-card-header small{ display:block; margin-top:4px; color:#6c757d; }
+    .resource-card-body{ padding:18px 24px 24px; }
+    .form-control,.form-select{ min-height:44px; border-radius:10px; }
+    .btn{ border-radius:10px; min-height:42px; padding:10px 14px; font-weight:600; }
+    .toolbar{ display:flex; gap:10px; align-items:center; justify-content:space-between; flex-wrap:wrap; margin-bottom:14px; }
+    .toolbar .left{ display:flex; gap:10px; align-items:center; flex-wrap:wrap; width:100%; max-width:840px; }
+    .toolbar .right{ display:flex; gap:10px; align-items:center; flex-wrap:wrap; }
+    .table thead th{ white-space:nowrap; }
+    .actions-col{ width:210px; white-space:nowrap; }
+    .badge-soft{
+      background: rgba(13,110,253,.10);
+      color:#0d6efd;
+      border:1px solid rgba(13,110,253,.18);
+      font-weight:700;
+      border-radius:999px;
+      padding:6px 10px;
+      display:inline-block;
+      text-transform:lowercase;
+    }
+    .empty-state{
+      display:none;
+      padding:18px;
+      border:1px dashed rgba(0,0,0,.15);
+      border-radius:12px;
+      text-align:center;
+      color:#6c757d;
+      margin-top:12px;
+    }
+  </style>
+</head>
+
+<body class="main-layout">
+  <div class="page-center">
+    <div class="resource-card">
+
+      <div class="resource-card-header">
+        <div class="header-left">
+          <img src="../../images/logo.png" alt="Logo">
+          <div>
+            <h4>Listado de Tareas</h4>
+            <small>Buscar, filtrar, crear y administrar tareas</small>
+          </div>
+        </div>
+
+        <div class="header-right d-flex gap-2">
+          <button type="button" class="btn btn-outline-secondary" id="btnRefrescar">Refrescar</button>
+          <button type="button" class="btn btn-primary" id="btnCrear">+ Crear tarea</button>
+        </div>
+      </div>
+
+      <div class="resource-card-body">
+
+        <div class="toolbar">
+          <div class="left">
+            <input id="busqueda" type="text" class="form-control" placeholder="Buscar por título, descripción...">
+            <select id="filtroEstado" class="form-select" style="max-width:240px;">
+              <option value="">Estado: Todos</option>
+              <option value="pendiente">Pendiente</option>
+              <option value="en_progreso">En progreso</option>
+              <option value="completada">Completada</option>
+            </select>
+            <select id="filtroPrioridad" class="form-select" style="max-width:240px;">
+              <option value="">Prioridad: Todas</option>
+              <option value="baja">Baja</option>
+              <option value="media">Media</option>
+              <option value="alta">Alta</option>
+            </select>
+          </div>
+
+          <div class="right">
+            <button type="button" class="btn btn-outline-secondary" id="btnLimpiarFiltros">Limpiar</button>
+          </div>
+        </div>
+
+        <div class="table-responsive">
+          <table class="table table-hover align-middle mb-0" id="tablaTareas">
+            <thead class="table-light">
+              <tr>
+                <th>Título</th>
+                <th>Prioridad</th>
+                <th>Estado</th>
+                <th>Fecha límite</th>
+                <th class="actions-col text-end">Acciones</th>
+              </tr>
+            </thead>
+            <tbody id="tbodyTareas"></tbody>
+          </table>
+        </div>
+
+        <div class="empty-state" id="emptyState">
+          No se encontraron tareas con los filtros actuales.
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <script src="../../js/jquery.min.js"></script>
+  <script src="../../js/bootstrap.bundle.min.js"></script>
+
+  <script src="../../js/config.js"></script>
+  <script src="../../js/api.js"></script>
+  <script src="../../js/auth.js"></script>
+  <script src="../../js/tareas.service.js"></script>
+
+  <script>
+    requireAuthOrRedirect();
+
+    const tbody = document.getElementById("tbodyTareas");
+    const emptyState = document.getElementById("emptyState");
+
+    const busqueda = document.getElementById("busqueda");
+    const filtroEstado = document.getElementById("filtroEstado");
+    const filtroPrioridad = document.getElementById("filtroPrioridad");
+
+    let tareas = [];
+
+    function n(v){ return (v ?? "").toString().toLowerCase().trim(); }
+    function safe(v){ return (v ?? "").toString(); }
+
+    function badge(val){ return `<span class="badge-soft">${safe(val)}</span>`; }
+
+    function render(rows){
+      tbody.innerHTML = rows.map(t => `
+        <tr>
+          <td class="fw-semibold">${safe(t.titulo ?? t.nombre ?? t.title)}</td>
+          <td>${badge(t.prioridad ?? "-")}</td>
+          <td>${badge(t.estado ?? "-")}</td>
+          <td>${safe(t.fecha_limite ?? t.fechaLimite ?? t.due_date ?? "-")}</td>
+          <td class="text-end">
+            <button class="btn btn-sm btn-outline-primary me-1" data-action="editar" data-id="${t.id_tarea ?? t.id ?? t.idTarea}">
+              Editar
+            </button>
+            <button class="btn btn-sm btn-outline-danger" data-action="eliminar" data-id="${t.id_tarea ?? t.id ?? t.idTarea}">
+              Eliminar
+            </button>
+          </td>
+        </tr>
+      `).join("");
+
+      emptyState.style.display = rows.length ? "none" : "block";
+    }
+
+    function aplicarFiltros(){
+      const q = n(busqueda.value);
+      const est = n(filtroEstado.value);
+      const pri = n(filtroPrioridad.value);
+
+      const filtered = tareas.filter(t => {
+        const titulo = n(t.titulo ?? t.nombre ?? t.title);
+        const desc = n(t.descripcion ?? t.description);
+        const texto = `${titulo} ${desc}`.trim();
+
+        const okQ = !q || texto.includes(q);
+        const okEst = !est || n(t.estado) === est;
+        const okPri = !pri || n(t.prioridad) === pri;
+
+        return okQ && okEst && okPri;
+      });
+
+      render(filtered);
+    }
+
+    async function cargar(){
+      try{
+        const data = await tareasList();
+        tareas = Array.isArray(data) ? data : (data?.data || []);
+        aplicarFiltros();
+      }catch(err){
+        console.error(err);
+        alert(err.message || "No se pudo cargar tareas");
+        tareas = [];
+        render([]);
+      }
+    }
+
+    document.getElementById("btnCrear").addEventListener("click", () => {
+      window.location.href = "./tareas.html";
+    });
+
+    document.getElementById("btnRefrescar").addEventListener("click", cargar);
+
+    document.getElementById("btnLimpiarFiltros").addEventListener("click", () => {
+      busqueda.value = "";
+      filtroEstado.value = "";
+      filtroPrioridad.value = "";
+      aplicarFiltros();
+    });
+
+    busqueda.addEventListener("input", aplicarFiltros);
+    filtroEstado.addEventListener("change", aplicarFiltros);
+    filtroPrioridad.addEventListener("change", aplicarFiltros);
+
+    document.getElementById("tablaTareas").addEventListener("click", async (ev) => {
+      const btn = ev.target.closest("button[data-action]");
+      if(!btn) return;
+
+      const action = btn.dataset.action;
+      const id = btn.dataset.id;
+
+      if(action === "editar"){
+        window.location.href = "./tareas.html?id=" + encodeURIComponent(id);
+        return;
+      }
+
+      if(action === "eliminar"){
+        const ok = confirm("¿Seguro que deseas eliminar esta tarea?");
+        if(!ok) return;
+
+        try{
+          await tareasDelete(id);
+          tareas = tareas.filter(t => String(t.id_tarea ?? t.id ?? t.idTarea) !== String(id));
+          aplicarFiltros();
+        }catch(err){
+          alert(err.message || "No se pudo eliminar la tarea");
+        }
+      }
+    });
+
+    cargar();
+  </script>
+</body>
+</html>

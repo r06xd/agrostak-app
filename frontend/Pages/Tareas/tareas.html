@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Gestión de Tareas</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <link rel="stylesheet" href="../../css/bootstrap.min.css">
+  <link rel="stylesheet" href="../../css/style.css">
+  <link rel="stylesheet" href="../../css/responsive.css">
+
+  <style>
+    body{ background:#f5f7fb; }
+    .page-center{ min-height:100vh; display:flex; align-items:center; justify-content:center; padding:24px 12px; }
+    .resource-card{ width:100%; max-width:760px; border:0; border-radius:16px; box-shadow:0 18px 45px rgba(0,0,0,.12); overflow:hidden; background:#fff; }
+    .resource-card-header{ padding:22px 24px; border-bottom:1px solid rgba(0,0,0,.06); display:flex; gap:16px; align-items:center; }
+    .resource-card-header img{ width:130px; height:auto; display:block; }
+    .resource-card-header h4{ margin:0; font-weight:700; letter-spacing:.2px; }
+    .resource-card-header small{ display:block; margin-top:4px; color:#6c757d; }
+    .resource-card-body{ padding:22px 24px 24px; }
+    .form-label{ font-weight:600; color:#343a40; margin-bottom:6px; }
+    .form-control,.form-select{ min-height:44px; border-radius:10px; }
+    textarea.form-control{ min-height:120px; resize:vertical; }
+    .btn{ border-radius:10px; min-height:42px; padding:10px 16px; font-weight:600; }
+    .actions{ display:flex; justify-content:space-between; gap:10px; padding-top:10px; flex-wrap:wrap; }
+  </style>
+</head>
+
+<body class="main-layout">
+  <div class="page-center">
+    <div class="resource-card">
+
+      <div class="resource-card-header">
+        <img src="../../images/logo.png" alt="Logo">
+        <div>
+          <h4>Gestión de Tareas</h4>
+          <small id="subTitle">Crear / Editar tarea</small>
+        </div>
+      </div>
+
+      <div class="resource-card-body">
+        <div id="alertBox" class="alert d-none" role="alert"></div>
+
+        <form id="tareaForm">
+          <div class="row g-3">
+
+            <div class="col-md-8">
+              <label class="form-label" for="titulo">Título</label>
+              <input id="titulo" class="form-control" maxlength="120" required placeholder="Ej: Revisar inventario, Llamar proveedor...">
+            </div>
+
+            <div class="col-md-4">
+              <label class="form-label" for="prioridad">Prioridad</label>
+              <select id="prioridad" class="form-select" required>
+                <option value="baja">Baja</option>
+                <option value="media" selected>Media</option>
+                <option value="alta">Alta</option>
+              </select>
+            </div>
+
+            <div class="col-md-12">
+              <label class="form-label" for="descripcion">Descripción</label>
+              <textarea id="descripcion" class="form-control" placeholder="Detalle de la tarea (opcional)"></textarea>
+            </div>
+
+            <div class="col-md-6">
+              <label class="form-label" for="estado">Estado</label>
+              <select id="estado" class="form-select" required>
+                <option value="pendiente" selected>Pendiente</option>
+                <option value="en_progreso">En progreso</option>
+                <option value="completada">Completada</option>
+              </select>
+            </div>
+
+            <div class="col-md-6">
+              <label class="form-label" for="fecha_limite">Fecha límite</label>
+              <input id="fecha_limite" type="date" class="form-control">
+            </div>
+
+          </div>
+
+          <div class="actions">
+            <button type="button" class="btn btn-outline-secondary" id="btnVolver">Volver</button>
+            <div class="d-flex gap-2">
+              <button type="reset" class="btn btn-outline-secondary">Limpiar</button>
+              <button type="submit" class="btn btn-primary" id="btnGuardar">Guardar</button>
+            </div>
+          </div>
+        </form>
+
+      </div>
+    </div>
+  </div>
+
+  <script src="../../js/jquery.min.js"></script>
+  <script src="../../js/bootstrap.bundle.min.js"></script>
+
+  <script src="../../js/config.js"></script>
+  <script src="../../js/api.js"></script>
+  <script src="../../js/auth.js"></script>
+  <script src="../../js/tareas.service.js"></script>
+
+  <script>
+    requireAuthOrRedirect();
+
+    const alertBox = document.getElementById("alertBox");
+    const btnGuardar = document.getElementById("btnGuardar");
+    const subTitle = document.getElementById("subTitle");
+
+    const form = document.getElementById("tareaForm");
+    const titulo = document.getElementById("titulo");
+    const prioridad = document.getElementById("prioridad");
+    const descripcion = document.getElementById("descripcion");
+    const estado = document.getElementById("estado");
+    const fechaLimite = document.getElementById("fecha_limite");
+
+    const params = new URLSearchParams(window.location.search);
+    const id = params.get("id");
+
+    function showAlert(msg, type="danger"){
+      alertBox.className = `alert alert-${type}`;
+      alertBox.textContent = msg;
+      alertBox.classList.remove("d-none");
+    }
+    function hideAlert(){ alertBox.classList.add("d-none"); alertBox.textContent=""; }
+    function setLoading(v){
+      btnGuardar.disabled = v;
+      btnGuardar.textContent = v ? "Guardando..." : "Guardar";
+    }
+
+    document.getElementById("btnVolver").addEventListener("click", () => {
+      window.location.href = "./listarTareas.html";
+    });
+
+    async function cargarEdicion(){
+      if(!id) return;
+      subTitle.textContent = "Editando tarea #" + id;
+
+      try{
+        const data = await tareasGetById(id);
+        const t = data?.data || data;
+
+        titulo.value = t.titulo ?? t.nombre ?? t.title ?? "";
+        prioridad.value = t.prioridad ?? "media";
+        descripcion.value = t.descripcion ?? t.description ?? "";
+        estado.value = t.estado ?? "pendiente";
+
+        // soporta "YYYY-MM-DD"
+        const f = t.fecha_limite ?? t.fechaLimite ?? t.due_date ?? "";
+        fechaLimite.value = (f || "").slice(0,10);
+      }catch(err){
+        showAlert(err.message || "No se pudo cargar la tarea");
+      }
+    }
+
+    form.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      hideAlert();
+      setLoading(true);
+
+      // Payload estándar (ajusta nombres si tu backend usa otros)
+      const payload = {
+        titulo: titulo.value.trim(),
+        descripcion: (descripcion.value || "").trim() || null,
+        prioridad: prioridad.value,
+        estado: estado.value,
+        fecha_limite: fechaLimite.value || null
+      };
+
+      try{
+        if(id){
+          await tareasUpdate(id, payload);
+          showAlert("Tarea actualizada", "success");
+        }else{
+          await tareasCreate(payload);
+          showAlert("Tarea creada", "success");
+        }
+        setTimeout(() => window.location.href = "./listarTareas.html", 450);
+      }catch(err){
+        showAlert(err.message || "No se pudo guardar la tarea");
+      }finally{
+        setLoading(false);
+      }
+    });
+
+    cargarEdicion();
+  </script>
+</body>
+</html>

@@ -12,7 +12,7 @@ from app.tasks.domain.schemas import (
 )
 from app.tasks.domain import services
 
-router = APIRouter(prefix="/tasks", tags=["tasks"])
+router = APIRouter(prefix="/tareas", tags=["tareas"])
 
 
 @router.get("/", response_model=list[TareaRead])

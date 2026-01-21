@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Bienvenida</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <!-- Bootstrap -->
+  <link rel="stylesheet" href="../css/bootstrap.min.css">
+  <!-- Estilos del proyecto -->
+  <link rel="stylesheet" href="../css/style.css">
+  <link rel="stylesheet" href="../css/responsive.css">
+
+  <style>
+    body{ background:#f5f7fb; }
+
+    .page-center{
+      min-height:100vh;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      padding:24px 12px;
+    }
+
+    .resource-card{
+      width:100%;
+      max-width: 980px;
+      border:0;
+      border-radius:16px;
+      box-shadow:0 18px 45px rgba(0,0,0,.12);
+      overflow:hidden;
+      background:#fff;
+    }
+
+    .resource-card-header{
+      padding:22px 24px;
+      border-bottom:1px solid rgba(0,0,0,.06);
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:16px;
+      flex-wrap:wrap;
+    }
+
+    .header-left{
+      display:flex;
+      align-items:center;
+      gap:16px;
+    }
+
+    .resource-card-header img{
+      width:130px;
+      height:auto;
+      display:block;
+    }
+
+    .resource-card-header h4{
+      margin:0;
+      font-weight:700;
+      letter-spacing:.2px;
+    }
+
+    .resource-card-header small{
+      display:block;
+      margin-top:4px;
+      color:#6c757d;
+    }
+
+    .resource-card-body{
+      padding:22px 24px 26px;
+    }
+
+    .welcome{
+      display:flex;
+      align-items:flex-start;
+      justify-content:space-between;
+      gap:16px;
+      flex-wrap:wrap;
+      margin-bottom: 14px;
+    }
+
+    .welcome h5{
+      margin:0;
+      font-weight:700;
+    }
+
+    .welcome p{
+      margin:6px 0 0;
+      color:#6c757d;
+    }
+
+    .btn{
+      border-radius:10px;
+      min-height:42px;
+      padding:10px 14px;
+      font-weight:600;
+    }
+
+    .menu-grid{
+      display:grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 14px;
+      margin-top: 12px;
+    }
+
+    @media (max-width: 768px){
+      .menu-grid{ grid-template-columns: 1fr; }
+    }
+
+    .menu-card{
+      border:1px solid rgba(0,0,0,.08);
+      border-radius:14px;
+      padding:16px;
+      background:#fff;
+      transition: transform .08s ease, box-shadow .12s ease;
+      cursor: pointer;
+      user-select: none;
+    }
+
+    .menu-card:hover{
+      transform: translateY(-2px);
+      box-shadow: 0 12px 26px rgba(0,0,0,.10);
+    }
+
+    .menu-card h6{
+      margin:0;
+      font-weight:800;
+      letter-spacing:.2px;
+    }
+
+    .menu-card p{
+      margin:8px 0 0;
+      color:#6c757d;
+    }
+
+    .menu-actions{
+      margin-top: 12px;
+      display:flex;
+      gap:10px;
+      flex-wrap:wrap;
+    }
+
+    .badge-soft{
+      background: rgba(13,110,253,.10);
+      color:#0d6efd;
+      border:1px solid rgba(13,110,253,.18);
+      font-weight:700;
+      border-radius:999px;
+      padding:6px 10px;
+      display:inline-block;
+      text-transform:lowercase;
+    }
+
+    .footer-mini{
+      margin-top: 14px;
+      color:#6c757d;
+      font-size:.92rem;
+    }
+  </style>
+</head>
+
+<body class="main-layout">
+  <div class="page-center">
+    <div class="resource-card">
+
+      <!-- Header -->
+      <div class="resource-card-header">
+        <div class="header-left">
+          <img src="../images/logo.png" alt="Logo">
+          <div>
+            <h4>Bienvenido</h4>
+            <small>Panel principal del sistema</small>
+          </div>
+        </div>
+
+        <div class="header-right d-flex gap-2">
+          <button class="btn btn-outline-secondary" id="btnLogout">Cerrar sesión</button>
+        </div>
+      </div>
+
+      <!-- Body -->
+      <div class="resource-card-body">
+
+        <div class="welcome">
+          <div>
+            <h5>¿Qué deseas gestionar hoy?</h5>
+            <p>Selecciona un módulo para continuar. Puedes administrar tareas y recursos desde aquí.</p>
+          </div>
+          <span class="badge-soft">proyecto omar</span>
+        </div>
+
+        <div class="menu-grid">
+
+          <!-- Tareas -->
+          <div class="menu-card" id="cardTareas" role="button" tabindex="0">
+            <h6>Gestión de Tareas</h6>
+            <p>Crear, editar, filtrar y hacer seguimiento del estado de tus tareas.</p>
+            <div class="menu-actions">
+              <a class="btn btn-primary" href="./Tareas/listarTareas.html">Ver listado</a>
+              <a class="btn btn-outline-primary" href="./Tareas/tareas.html">Crear tarea</a>
+            </div>
+          </div>
+
+          <!-- Recursos -->
+          <div class="menu-card" id="cardRecursos" role="button" tabindex="0">
+            <h6>Gestión de Recursos</h6>
+            <p>Administrar recursos disponibles: crear, editar, eliminar y buscar.</p>
+            <div class="menu-actions">
+              <a class="btn btn-primary" href="./Recursos/listarRecursos.html">Ver listado</a>
+              <a class="btn btn-outline-primary" href="./Recursos/recursos.html">Crear recurso</a>
+            </div>
+          </div>
+
+        </div>
+
+        <div class="footer-mini">
+          Consejo: si tu sesión vence, vuelve a iniciar sesión desde el login.
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- JS -->
+  <script src="../js/jquery.min.js"></script>
+  <script src="../js/bootstrap.bundle.min.js"></script>
+
+  <!-- Módulos -->
+  <script src="../js/config.js"></script>
+  <script src="../js/api.js"></script>
+  <script src="../js/auth.js"></script>
+
+  <script>
+    // Protege la pantalla
+    requireAuthOrRedirect();
+
+    // Logout
+    document.getElementById("btnLogout").addEventListener("click", () => {
+      logout();
+    });
+
+    // (Opcional) permitir click en toda la card además de botones
+    function go(url){ window.location.href = url; }
+    document.getElementById("cardTareas").addEventListener("click", (e) => {
+      if(e.target.closest("a,button")) return;
+      go("./listarTareas.html");
+    });
+    document.getElementById("cardRecursos").addEventListener("click", (e) => {
+      if(e.target.closest("a,button")) return;
+      go("./listarRecursos.html");
+    });
+  </script>
+</body>
+</html>

@@ -18,10 +18,10 @@ async function loginRequest(correo, password) {
 
 function requireAuthOrRedirect() {
   const token = getToken();
-  if (!token) window.location.href = "./login.html";
+  if (!token) window.location.href = "./index.html";
 }
 
 function logout() {
   clearToken();
-  window.location.href = "./login.html";
+  window.location.href = "../../index.html";
 }
