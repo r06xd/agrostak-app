@@ -15,6 +15,7 @@ app = FastAPI(title="API Flor de Canela - Recursos")
 #para pruebas locales
 origins = [
     "https://angrostak.netlify.app",
+    "https://agrostak.netlify.app",
     "http://127.0.0.1:5500",
     "http://localhost:5500",
     "http://127.0.0.1:5173",
