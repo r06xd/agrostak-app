@@ -8,6 +8,7 @@ from app.identity.domain.schemas import (
 )
 from app.identity.domain import services
 from app.identity.api.deps import get_current_user
+from app.identity.domain.schemas import PermisoRead, MenuItemRead
 
 router = APIRouter(prefix="/identity", tags=["identity"])
 
@@ -47,3 +48,11 @@ def me(user=Depends(get_current_user)):
 @router.post("/bootstrap/admin", response_model=UsuarioRead)
 def bootstrap_admin(data: UsuarioCreate, db: Session = Depends(get_session)):
     return services.create_user(db, data)
+
+@router.get("/permisos", response_model=list[PermisoRead])
+def my_permissions(db=Depends(get_session), user=Depends(get_current_user)):
+    return services.obtener_permisos_usuario(db, user)
+
+@router.get("/menu", response_model=list[MenuItemRead])
+def my_menu(db=Depends(get_session), user=Depends(get_current_user)):
+    return services.obtener_menu_usuario(db, user)

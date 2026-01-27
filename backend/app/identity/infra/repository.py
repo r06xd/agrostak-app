@@ -1,7 +1,7 @@
 from sqlalchemy.orm import Session
 from typing import Optional, List
 
-from app.identity.infra.models import UsuarioORM, RolORM, AccesoUsuarioORM
+from app.identity.infra.models import UsuarioORM, RolORM, AccesoUsuarioORM, PermisoORM, MenuItemORM
 
 
 class IdentityRepository:
@@ -44,3 +44,15 @@ class IdentityRepository:
     def log_access(self, id_usuario: int, ip: str | None, user_agent: str | None) -> None:
         self.db.add(AccesoUsuarioORM(id_usuario=id_usuario, ip=ip, user_agent=user_agent))
         self.db.commit()
+
+    def get_role_permissions(self, id_rol: int) -> list[PermisoORM]:
+        rol = self.db.query(RolORM).filter(RolORM.id_rol == id_rol).first()
+        return rol.permisos if rol else []
+    
+    def list_menu_items(self) -> list[MenuItemORM]:
+        return (
+            self.db.query(MenuItemORM)
+            .filter(MenuItemORM.activo == 1)
+            .order_by(MenuItemORM.orden.asc())
+            .all()
+        )

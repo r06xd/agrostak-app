@@ -1065,3 +1065,14 @@ ul.location_icon li a:hover {
 
 /** end footer **/
 
+/*Estilo propio*/
+.grupo-password{
+     display: flex;
+     align-items: center;
+     justify-content: end;
+}
+
+#togglePassword{
+     padding-inline-end: 10px;
+}
+

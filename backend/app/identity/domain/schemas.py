@@ -54,3 +54,22 @@ class LoginRequest(BaseModel):
 class TokenResponse(BaseModel):
     access_token: str
     token_type: str = "bearer"
+
+class PermisoRead(BaseModel):
+    id_permiso: int
+    clave: str
+    descripcion: Optional[str] = None
+    modulo: Optional[str] = None
+
+    class Config:
+        from_attributes = True
+
+class MenuItemRead(BaseModel):
+    clave: str
+    label: str
+    path: str
+    icon: Optional[str] = None
+    orden: int
+
+    class Config:
+        from_attributes = True

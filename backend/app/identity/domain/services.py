@@ -11,6 +11,7 @@ from app.identity.infra.repository import IdentityRepository
 from app.identity.infra.models import UsuarioORM
 from app.identity.infra.security import hash_password, verify_password, create_access_token
 from app.config import settings
+from app.identity.domain.schemas import PermisoRead, MenuItemRead
 
 
 def create_user(db: Session, data: UsuarioCreate) -> UsuarioRead:
@@ -96,10 +97,32 @@ def login(db: Session, data: LoginRequest, ip: str | None, user_agent: str | Non
     user.ultimo_acceso = datetime.utcnow()
     repo.update_user(user)
     repo.log_access(user.id_usuario, ip, user_agent)
+    rol_str = repo.get_role(user.id_rol).nombre
 
     token = create_access_token(
-        data={"sub": str(user.id_usuario), "role": str(user.id_rol)},
+        data={"sub": str(user.id_usuario), "role": str(user.id_rol), "rol": rol_str},
         secret_key=getattr(settings, "JWT_SECRET", "dev_secret_change_me"),
         expires_minutes=getattr(settings, "JWT_EXPIRES_MIN", 120),
     )
     return TokenResponse(access_token=token)
+
+def obtener_permisos_usuario(db, user) -> list[PermisoRead]:
+    repo = IdentityRepository(db)
+    permisos = repo.get_role_permissions(user.id_rol)
+    return [PermisoRead.model_validate(p) for p in permisos]
+
+def obtener_menu_usuario(db, user) -> list[MenuItemRead]:
+    repo = IdentityRepository(db)
+    permisos = repo.get_role_permissions(user.id_rol)
+    claves = set([p.clave for p in permisos])
+
+    items = repo.list_menu_items()
+
+    visibles = []
+    for it in items:
+        if it.permiso_clave is None:
+            visibles.append(it)
+        elif it.permiso_clave in claves:
+            visibles.append(it)
+
+    return [MenuItemRead.model_validate(x) for x in visibles]

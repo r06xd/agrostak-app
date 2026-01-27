@@ -13,6 +13,19 @@ async function loginRequest(correo, password) {
   if (!token) throw new Error("No se recibió access_token del servidor.");
 
   setToken(token);
+
+  // Cargar menú por rol y guardarlo
+  try {
+    
+    const menu = await fetchMenuFromApi();
+    const menuArray = Array.isArray(menu) ? menu : (menu?.data || []);
+    saveMenu(menuArray);
+  } catch (e) {
+    console.log("Entra al catch");
+    // si falla, igual deja loguear, pero sin menú
+    saveMenu([]);
+  }
+
   return data;
 }
 

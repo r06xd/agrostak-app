@@ -160,3 +160,31 @@ CREATE TABLE notificaciones (
     CONSTRAINT fk_notif_recurso
         FOREIGN KEY (id_recurso) REFERENCES recursos(id_recurso)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS permisos (
+  id_permiso INT AUTO_INCREMENT PRIMARY KEY,
+  clave VARCHAR(80) NOT NULL UNIQUE,
+  descripcion VARCHAR(255) NULL,
+  modulo VARCHAR(50) NULL,
+  fecha_creacion TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS rol_permisos (
+  id_rol INT UNSIGNED NOT NULL,
+  id_permiso INT NOT NULL,
+  PRIMARY KEY (id_rol, id_permiso),
+  CONSTRAINT fk_rp_rol FOREIGN KEY (id_rol) REFERENCES roles(id_rol) ON DELETE CASCADE,
+  CONSTRAINT fk_rp_permiso FOREIGN KEY (id_permiso) REFERENCES permisos(id_permiso) ON DELETE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS menu_items (
+  id_menu INT AUTO_INCREMENT PRIMARY KEY,
+  clave VARCHAR(80) NOT NULL UNIQUE,
+  label VARCHAR(80) NOT NULL,
+  path VARCHAR(120) NOT NULL,
+  icon VARCHAR(40) NULL,
+  orden INT NOT NULL DEFAULT 1,
+  permiso_clave VARCHAR(80) NULL, -- si es NULL, es público para cualquier logueado
+  activo TINYINT NOT NULL DEFAULT 1
+);
+

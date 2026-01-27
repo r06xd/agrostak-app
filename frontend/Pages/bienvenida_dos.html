@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Bienvenida</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <link rel="stylesheet" href="../css/bootstrap.min.css">
+  <link rel="stylesheet" href="../css/style.css">
+  <link rel="stylesheet" href="../css/responsive.css">
+
+  <style>
+    body{ background:#f5f7fb; }
+    .page-center{ min-height:100vh; display:flex; align-items:center; justify-content:center; padding:24px 12px; }
+    .resource-card{ width:100%; max-width:980px; border:0; border-radius:16px; box-shadow:0 18px 45px rgba(0,0,0,.12); overflow:hidden; background:#fff; }
+    .resource-card-header{ padding:22px 24px; border-bottom:1px solid rgba(0,0,0,.06); display:flex; align-items:center; justify-content:space-between; gap:16px; flex-wrap:wrap; }
+    .header-left{ display:flex; align-items:center; gap:16px; }
+    .resource-card-header img{ width:130px; height:auto; display:block; }
+    .resource-card-header h4{ margin:0; font-weight:700; letter-spacing:.2px; }
+    .resource-card-header small{ display:block; margin-top:4px; color:#6c757d; }
+    .resource-card-body{ padding:22px 24px 26px; }
+
+    .menu-grid{ display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:14px; margin-top:12px; }
+    @media (max-width:768px){ .menu-grid{ grid-template-columns:1fr; } }
+
+    .menu-card{
+      border:1px solid rgba(0,0,0,.08);
+      border-radius:14px;
+      padding:16px;
+      background:#fff;
+      transition: transform .08s ease, box-shadow .12s ease;
+      cursor:pointer;
+      user-select:none;
+    }
+    .menu-card:hover{ transform: translateY(-2px); box-shadow:0 12px 26px rgba(0,0,0,.10); }
+    .menu-card h6{ margin:0; font-weight:800; }
+    .menu-card p{ margin:8px 0 0; color:#6c757d; }
+    .btn{ border-radius:10px; min-height:42px; font-weight:600; }
+
+    .empty-state{
+      display:none;
+      padding:18px;
+      border:1px dashed rgba(0,0,0,.15);
+      border-radius:12px;
+      text-align:center;
+      color:#6c757d;
+      margin-top:12px;
+    }
+  </style>
+</head>
+
+<body class="main-layout">
+  <div class="page-center">
+    <div class="resource-card">
+
+      <div class="resource-card-header">
+        <div class="header-left">
+          <img src="../images/logo.png" alt="Logo">
+          <div>
+            <h4>Bienvenido</h4>
+            <small>Opciones disponibles según tu rol</small>
+          </div>
+        </div>
+
+        <div class="header-right d-flex gap-2">
+          <button class="btn btn-outline-secondary" id="btnReloadMenu">Actualizar menú</button>
+          <button class="btn btn-outline-secondary" id="btnLogout">Cerrar sesión</button>
+        </div>
+      </div>
+
+      <div class="resource-card-body">
+        <div id="menuGrid" class="menu-grid"></div>
+        <div id="emptyState" class="empty-state">No tienes opciones asignadas en el menú.</div>
+      </div>
+    </div>
+  </div>
+
+  <script src="../js/jquery.min.js"></script>
+  <script src="../js/bootstrap.bundle.min.js"></script>
+
+  <script src="../js/config.js"></script>
+  <script src="../js/api.js"></script>
+  <script src="../js/menu.service.js"></script>
+  <script src="../js/auth.js"></script>
+
+  <script>
+    requireAuthOrRedirect();
+
+    const grid = document.getElementById("menuGrid");
+    const emptyState = document.getElementById("emptyState");
+
+    function iconEmoji(icon){
+      // puedes cambiar a fontawesome luego; por ahora algo simple
+      const map = {
+        checklist: "✅",
+        box: "📦",
+        settings: "⚙️",
+        users: "👥"
+      };
+      return map[icon] || "📌";
+    }
+
+    function renderMenu(items){
+      grid.innerHTML = "";
+
+      if(!items || !items.length){
+        emptyState.style.display = "block";
+        return;
+      }
+      emptyState.style.display = "none";
+
+      // ordena por "orden"
+      items.sort((a,b) => (a.orden ?? 999) - (b.orden ?? 999));
+
+      items.forEach(m => {
+        // Tu backend manda path "/tareas". Nosotros mapeamos a páginas reales.
+        // Ajusta este mapping si tus páginas se llaman distinto.
+        const pageMap = {
+          "/tareas": "./Tareas/listarTareas.html",
+          "/recursos": "./Recursos/listarRecursos.html"
+        };
+
+        const href = pageMap[m.path] || "#";
+
+        const div = document.createElement("div");
+        div.className = "menu-card";
+        div.innerHTML = `
+          <h6>${iconEmoji(m.icon)} ${m.label}</h6>
+          <p>${m.clave || ""}</p>
+          <div class="mt-3 d-flex gap-2 flex-wrap">
+            <a class="btn btn-primary" href="${href}">Entrar</a>
+          </div>
+        `;
+
+        div.addEventListener("click", (e) => {
+          if(e.target.closest("a,button")) return;
+          if(href !== "#") window.location.href = href;
+        });
+
+        grid.appendChild(div);
+      });
+    }
+
+    async function loadAndRenderMenu(force=false){
+      console.log("Entrq q construir menu");
+      // Si ya hay menú guardado y no es force, usa cache
+      let menu = loadMenu();
+      if(force || !menu.length){
+        const apiMenu = await fetchMenuFromApi();
+        menu = Array.isArray(apiMenu) ? apiMenu : (apiMenu?.data || []);
+        saveMenu(menu);
+      }
+      renderMenu(menu);
+    }
+
+    document.getElementById("btnLogout").addEventListener("click", logout);
+    document.getElementById("btnReloadMenu").addEventListener("click", async () => {
+      try{
+        await loadAndRenderMenu(true);
+      }catch(err){
+        alert(err.message || "No se pudo actualizar el menú");
+      }
+    });
+
+    loadAndRenderMenu(false).catch(err => {
+      alert(err.message || "No se pudo cargar el menú");
+    });
+  </script>
+</body>
+</html>
