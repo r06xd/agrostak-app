@@ -99,60 +99,73 @@
     //Bloque onesignal
     window.OneSignalDeferred = window.OneSignalDeferred || [];
 
-    OneSignalDeferred.push(async function (OneSignal) {
+    function sleep(ms){ return new Promise(r => setTimeout(r, ms)); }
     
+    OneSignalDeferred.push(async function (OneSignal) {
       await OneSignal.init({
         appId: "c4d82155-7c0f-498b-b63f-8c96ae733884",
         notifyButton: { enable: false },
-        serviceWorkerParam: { scope: "../" },
+    
+        // ✅ CORRECTO EN NETLIFY
+        serviceWorkerParam: { scope: "/" },
         serviceWorkerPath: "/OneSignalSDKWorker.js",
         serviceWorkerUpdaterPath: "/OneSignalSDKUpdaterWorker.js",
       });
     
-      console.log("OneSignal init OK");
+      console.log("✅ OneSignal init OK");
     
-      // 1️⃣ Pedir permiso si aún no existe
-      console.log("Primero",OneSignal.Notifications.permission);
-      if (OneSignal.Notifications.permission !== true) {
+      // 1) Permiso (en v16 es boolean)
+      if (!OneSignal.Notifications.permission) {
         await OneSignal.Notifications.requestPermission();
       }
-      console.log("Segundo",OneSignal.Notifications.permission);
+      console.log("Permission:", OneSignal.Notifications.permission);
     
-      if (OneSignal.Notifications.permission !== true) {
-        console.log("Usuario no permitió notificaciones");
+      if (!OneSignal.Notifications.permission) {
+        console.log("❌ Usuario no permitió notificaciones");
         return;
       }
     
-      // 2️⃣ Forzar suscripción
+      // 2) Opt-in y confirmar estado
       if (OneSignal.User?.PushSubscription?.optIn) {
         await OneSignal.User.PushSubscription.optIn();
       }
     
-      // 3️⃣ Esperar que exista subscription REAL
+      // Esperar a que esté realmente opt-in y exista SubId
       let subId = null;
-      for (let i = 0; i < 20; i++) {
+      for (let i = 0; i < 30; i++) {
+        const optedIn = OneSignal.User?.PushSubscription?.optedIn ?? false;
         subId = OneSignal.User?.PushSubscription?.id ?? null;
-        if (subId) break;
-        await new Promise(r => setTimeout(r, 500));
+    
+        if (optedIn && subId) break;
+        await sleep(300);
       }
     
+      console.log("optedIn:", OneSignal.User?.PushSubscription?.optedIn);
       console.log("SubId:", subId);
     
-      if (!subId) {
-        console.log("No hay SubId todavía");
+      if (!subId || !OneSignal.User?.PushSubscription?.optedIn) {
+        console.log("❌ No hay suscripción activa aún");
         return;
       }
     
-      // 4️⃣ AHORA sí vincular usuario
+      // 3) Vincular external user id (DESPUÉS de estar suscrito)
       const idUsuario = localStorage.getItem("id_usuario");
       if (!idUsuario) {
-        console.log("No hay id_usuario");
+        console.log("❌ No hay id_usuario en localStorage");
         return;
       }
     
-      await OneSignal.login(String(idUsuario));
-      console.log("External ID vinculado:", idUsuario);
+      try {
+        await OneSignal.login(String(idUsuario));
+        console.log("✅ External ID vinculado:", idUsuario);
     
+        // Espera breve y muestra estado interno (esto es más confiable que mirar el dashboard al instante)
+        await sleep(800);
+        console.log("✅ OneSignal.User:", OneSignal.User);
+    
+      } catch (e) {
+        console.error("❌ Error en OneSignal.login:", e);
+      }
     });
     //FIN bloque signal
 
