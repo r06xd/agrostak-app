@@ -11,6 +11,11 @@
   <link rel="stylesheet" href="../../css/style.css">
   <link rel="stylesheet" href="../../css/responsive.css">
 
+  <link rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+
+
+
   <style>
     .page-center{
       min-height: 100vh;
@@ -145,8 +150,11 @@
         </div>
 
         <div class="header-right">
+          <button type="button" class="btn btn-primary" id="btnHome">
+            <i class="fa-solid fa-house"></i>
+          </button>
           <button type="button" class="btn btn-primary" id="btnCrear">
-            + Crear recurso
+            <i class="fa-solid fa-plus"></i>
           </button>
         </div>
       </div>
@@ -172,7 +180,9 @@
           </div>
 
           <div class="right">
-            <button type="button" class="btn btn-outline-secondary" id="btnLimpiarFiltros">Limpiar</button>
+            <button type="button" class="btn btn-outline-secondary" id="btnLimpiarFiltros">
+              <i class="fa-solid fa-eraser"></i>
+            </button>
           </div>
         </div>
 
@@ -230,12 +240,16 @@
         <td class="fw-semibold">${safe(r.nombre)}</td>
         <td><span class="badge-soft">${safe(r.tipo)}</span></td>
         <td>${safe(r.unidad_medida)}</td>
-        <td>${Number(r.cantidad_disponible ?? 0).toFixed(2)}</td>
+        <td>${Math.round(r.cantidad_disponible ?? 0)}</td>
         <td>${safe(r.ubicacion)}</td>
         <td>${safe(r.estado)}</td>
         <td class="text-end">
-          <button class="btn btn-sm btn-outline-primary" data-action="editar" data-id="${r.id_recurso}">Editar</button>
-          <button class="btn btn-sm btn-outline-danger" data-action="eliminar" data-id="${r.id_recurso}">Eliminar</button>
+          <button class="btn btn-sm btn-outline-primary" data-action="editar" data-id="${r.id_recurso}">
+          <i class="fa-solid fa-pen-to-square"></i>
+          </button>
+          <button class="btn btn-sm btn-outline-danger" data-action="eliminar" data-id="${r.id_recurso}">
+          <i class="fa-solid fa-trash"></i>
+          </button>
         </td>
       </tr>
     `).join("");
@@ -270,6 +284,10 @@
 
   document.getElementById("btnCrear").addEventListener("click", () => {
     window.location.href = "./recursos.html"; // crear
+  });
+
+  document.getElementById("btnHome").addEventListener("click", () => {
+    window.location.href = "./../bienvenida_dos.html"; // crear
   });
 
   document.getElementById("btnLimpiarFiltros").addEventListener("click", () => {

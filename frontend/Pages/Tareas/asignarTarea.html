@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Asignar Tarea</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <link rel="stylesheet" href="../../css/bootstrap.min.css">
+  <link rel="stylesheet" href="../../css/style.css">
+  <link rel="stylesheet" href="../../css/responsive.css">
+
+  <style>
+    body{background:#f5f7fb;}
+    .page-center{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px 12px;}
+    .resource-card{width:100%;max-width:860px;border:0;border-radius:16px;box-shadow:0 18px 45px rgba(0,0,0,.12);overflow:hidden;background:#fff;}
+    .resource-card-header{padding:22px 24px;border-bottom:1px solid rgba(0,0,0,.06);display:flex;gap:16px;align-items:center;justify-content:space-between;flex-wrap:wrap;}
+    .header-left{display:flex;gap:16px;align-items:center;}
+    .resource-card-header img{width:130px;height:auto;display:block;}
+    .resource-card-header h4{margin:0;font-weight:700;letter-spacing:.2px;}
+    .resource-card-header small{display:block;margin-top:4px;color:#6c757d;}
+    .resource-card-body{padding:22px 24px 24px;}
+    .form-label{font-weight:600;color:#343a40;margin-bottom:6px;}
+    .form-control,.form-select{min-height:44px;border-radius:10px;}
+    .btn{border-radius:10px;min-height:42px;padding:10px 16px;font-weight:600;}
+    .actions{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;padding-top:10px;}
+    .info-box{background:#f8fafc;border:1px solid rgba(0,0,0,.08);border-radius:12px;padding:14px 14px;}
+    .muted{color:#6c757d;}
+  </style>
+</head>
+
+<body class="main-layout">
+  <div class="page-center">
+    <div class="resource-card">
+
+      <div class="resource-card-header">
+        <div class="header-left">
+          <img src="../../images/logo.png" alt="Logo">
+          <div>
+            <h4>Asignar Tarea</h4>
+            <small>Selecciona una tarea y un usuario</small>
+          </div>
+        </div>
+
+        <div class="d-flex gap-2">
+          <button class="btn btn-outline-secondary" id="btnVolver">Volver</button>
+        </div>
+      </div>
+
+      <div class="resource-card-body">
+        <div id="alertBox" class="alert d-none" role="alert"></div>
+
+        <div class="info-box mb-3">
+          <div class="fw-semibold" id="taskTitle">Tarea: <span class="muted">—</span></div>
+          <div class="muted" id="taskDesc">Descripción: —</div>
+        </div>
+
+        <form id="asignarForm">
+          <div class="row g-3">
+            <div class="col-md-6">
+              <label class="form-label" for="id_tarea">Tarea</label>
+              <select id="id_tarea" class="form-select" required>
+                <option value="">Seleccione</option>
+              </select>
+              <div class="muted mt-1" style="font-size:.92rem;">
+                Tip: puedes abrir “Asignar” desde el listado para que venga preseleccionada.
+              </div>
+            </div>
+
+            <div class="col-md-6">
+              <label class="form-label" for="id_usuario">Usuario asignado</label>
+              <select id="id_usuario" class="form-select" required>
+                <option value="">Seleccione</option>
+              </select>
+              <div class="muted mt-1" style="font-size:.92rem;">
+                Solo el usuario asignado debe recibir la notificación (push).
+              </div>
+            </div>
+          </div>
+
+          <div class="actions">
+            <button type="button" class="btn btn-outline-secondary" id="btnLimpiar">Limpiar</button>
+            <button type="submit" class="btn btn-primary" id="btnAsignar">Asignar</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <script src="../../js/jquery.min.js"></script>
+  <script src="../../js/bootstrap.bundle.min.js"></script>
+
+  <script src="../../js/config.js"></script>
+  <script src="../../js/api.js"></script>
+  <script src="../../js/menu.service.js"></script>
+  <script src="../../js/auth.js"></script>
+
+  <script src="../../js/usuarios.service.js"></script>
+  <script src="../../js/tareas.service.js"></script>
+
+  <script>
+    requireAuthOrRedirect();
+
+    const alertBox = document.getElementById("alertBox");
+    const btnAsignar = document.getElementById("btnAsignar");
+
+    const id_tarea = document.getElementById("id_tarea");
+    const id_usuario = document.getElementById("id_usuario");
+
+    const taskTitle = document.getElementById("taskTitle");
+    const taskDesc = document.getElementById("taskDesc");
+
+    const params = new URLSearchParams(location.search);
+    const preTaskId = params.get("tarea"); // /asignarTarea.html?tarea=12
+
+    function showAlert(msg, type="danger"){
+      alertBox.className = `alert alert-${type}`;
+      alertBox.textContent = msg;
+      alertBox.classList.remove("d-none");
+    }
+    function hideAlert(){ alertBox.classList.add("d-none"); alertBox.textContent=""; }
+    function setLoading(v){ btnAsignar.disabled=v; btnAsignar.textContent=v ? "Asignando..." : "Asignar"; }
+
+    document.getElementById("btnVolver").addEventListener("click", () => {
+      window.location.href = "./listarTareas.html";
+    });
+
+    document.getElementById("btnLimpiar").addEventListener("click", () => {
+      id_tarea.value = "";
+      id_usuario.value = "";
+      taskTitle.innerHTML = `Tarea: <span class="muted">—</span>`;
+      taskDesc.textContent = "Descripción: —";
+      hideAlert();
+    });
+
+    async function cargarUsuarios(){
+      const data = await usuariosList();
+      const users = Array.isArray(data) ? data : (data?.data || []);
+      id_usuario.innerHTML = `<option value="">Seleccione</option>` + users.map(u => {
+        const uid = u.id_usuario ?? u.id ?? u.idUsuario;
+        const label = (u.correo ?? u.email ?? "").trim() || (u.usuario ?? u.username ?? "").trim() || ("Usuario " + uid);
+        return `<option value="${uid}">${label}</option>`;
+      }).join("");
+    }
+
+    function renderTareaInfo(t){
+      const titulo = t.titulo ?? t.nombre ?? t.title ?? ("Tarea #" + (t.id_tarea ?? t.id));
+      const desc = t.descripcion ?? t.description ?? t.detalle ?? "";
+      taskTitle.innerHTML = `Tarea: <span class="muted">${titulo}</span>`;
+      taskDesc.textContent = `Descripción: ${desc || "—"}`;
+    }
+
+    async function cargarTareas(){
+      const data = await tareasList();
+      const tareas = Array.isArray(data) ? data : (data?.data || []);
+      id_tarea.innerHTML = `<option value="">Seleccione</option>` + tareas.map(t => {
+        const tid = t.id_tarea ?? t.id ?? t.idTarea;
+        const label = t.titulo ?? t.nombre ?? t.title ?? ("Tarea " + tid);
+        return `<option value="${tid}">${label}</option>`;
+      }).join("");
+
+      // Si viene preseleccionada
+      if(preTaskId){
+        id_tarea.value = preTaskId;
+        const t = tareas.find(x => String(x.id_tarea ?? x.id ?? x.idTarea) === String(preTaskId));
+        if(t) renderTareaInfo(t);
+        else {
+          // intenta buscarla por id
+          try {
+            const one = await tareasGetById(preTaskId);
+            renderTareaInfo(one?.data || one);
+          } catch {}
+        }
+      }
+    }
+
+    id_tarea.addEventListener("change", async () => {
+      hideAlert();
+      const tid = id_tarea.value;
+      if(!tid){
+        taskTitle.innerHTML = `Tarea: <span class="muted">—</span>`;
+        taskDesc.textContent = "Descripción: —";
+        return;
+      }
+      try{
+        const data = await tareasGetById(tid);
+        renderTareaInfo(data?.data || data);
+      }catch{
+        // si no hay endpoint GET by id, no pasa nada
+      }
+    });
+
+    document.getElementById("asignarForm").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      hideAlert();
+      setLoading(true);
+
+      try{
+        await tareasAsignar(id_tarea.value, id_usuario.value);
+        showAlert("Tarea asignada correctamente ✅", "success");
+        setTimeout(() => window.location.href = "./listarTareas.html", 600);
+      }catch(err){
+        showAlert(err.message || "No se pudo asignar la tarea");
+      }finally{
+        setLoading(false);
+      }
+    });
+
+    (async () => {
+      try{
+        await cargarUsuarios();
+        await cargarTareas();
+      }catch(err){
+        showAlert(err.message || "Error cargando datos");
+      }
+    })();
+  </script>
+</body>
+</html>

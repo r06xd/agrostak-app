@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Gestión de Usuarios</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="../../css/bootstrap.min.css">
+  <link rel="stylesheet" href="../../css/style.css">
+  <link rel="stylesheet" href="../../css/responsive.css">
+
+  <style>
+    body{background:#f5f7fb;}
+    .page-center{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px 12px;}
+    .resource-card{width:100%;max-width:760px;border:0;border-radius:16px;box-shadow:0 18px 45px rgba(0,0,0,.12);overflow:hidden;background:#fff;}
+    .resource-card-header{padding:22px 24px;border-bottom:1px solid rgba(0,0,0,.06);display:flex;gap:16px;align-items:center;}
+    .resource-card-header img{width:130px;height:auto;display:block;}
+    .resource-card-header h4{margin:0;font-weight:700;letter-spacing:.2px;}
+    .resource-card-header small{display:block;margin-top:4px;color:#6c757d;}
+    .resource-card-body{padding:22px 24px 24px;}
+    .form-label{font-weight:600;color:#343a40;margin-bottom:6px;}
+    .form-control,.form-select{min-height:44px;border-radius:10px;}
+    .btn{border-radius:10px;min-height:42px;padding:10px 16px;font-weight:600;}
+    .actions{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;padding-top:10px;}
+    .password-wrap{position:relative;}
+    .password-wrap i{position:absolute;top:50%;right:14px;transform:translateY(-50%);cursor:pointer;color:#6c757d;}
+    .form-control.pe-5{padding-right:44px!important;}
+  </style>
+
+  <!-- FontAwesome (si ya lo usas en el proyecto) -->
+  <link rel="stylesheet"
+    href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"
+    crossorigin="anonymous" referrerpolicy="no-referrer">
+</head>
+
+<body class="main-layout">
+  <div class="page-center">
+    <div class="resource-card">
+
+      <div class="resource-card-header">
+        <img src="../../images/logo.png" alt="Logo">
+        <div>
+          <h4>Gestión de Usuarios</h4>
+          <small id="subTitle">Crear / Editar usuario</small>
+        </div>
+      </div>
+
+      <div class="resource-card-body">
+        <div id="alertBox" class="alert d-none" role="alert"></div>
+
+        <form id="usuarioForm">
+          <div class="row g-3">
+            <div class="col-md-6">
+              <label class="form-label" for="correo">Correo</label>
+              <input id="correo" type="email" class="form-control" required placeholder="correo@ejemplo.com">
+            </div>
+
+            <div class="col-md-6">
+              <label class="form-label" for="usuario">Usuario</label>
+              <input id="usuario" class="form-control" maxlength="60" placeholder="Ej: admin">
+            </div>
+
+            <div class="col-md-6">
+              <label class="form-label" for="nombre">Nombre</label>
+              <input id="nombre" class="form-control" maxlength="120" placeholder="Ej: Administrador">
+            </div>
+
+            <div class="col-md-6">
+              <label class="form-label" for="id_rol">Rol</label>
+              <select id="id_rol" class="form-select" required>
+                <option value="">Seleccione</option>
+              </select>
+            </div>
+
+            <div class="col-md-6">
+              <label class="form-label" for="estado">Estado</label>
+              <select id="estado" class="form-select" required>
+                <option value="activo" selected>Activo</option>
+                <option value="inactivo">Inactivo</option>
+              </select>
+            </div>
+
+            <div class="col-md-6">
+              <label class="form-label" for="password">Contraseña</label>
+              <div class="password-wrap">
+                <input id="password" type="password" class="form-control pe-5" placeholder="••••••••">
+                <i id="togglePassword" class="fa-solid fa-eye" title="Mostrar/ocultar"></i>
+              </div>
+              <div class="text-muted mt-1" style="font-size:.92rem;">
+                En edición: deja vacío para no cambiar la contraseña.
+              </div>
+            </div>
+          </div>
+
+          <div class="actions">
+            <button type="button" class="btn btn-outline-secondary" id="btnVolver">
+              <i class="fa-solid fa-arrow-left"></i>
+            </button>
+            <div class="d-flex gap-2">
+              <button type="reset" class="btn btn-outline-secondary">
+                <i class="fa-solid fa-eraser"></i>
+              </button>
+              <button type="submit" class="btn btn-primary" id="btnGuardar">
+                <i class="fa-solid fa-floppy-disk"></i>
+              </button>
+            </div>
+          </div>
+        </form>
+
+      </div>
+    </div>
+  </div>
+
+  <script src="../../js/jquery.min.js"></script>
+  <script src="../../js/bootstrap.bundle.min.js"></script>
+
+  <script src="../../js/config.js"></script>
+  <script src="../../js/api.js"></script>
+  <script src="../../js/menu.service.js"></script>
+  <script src="../../js/auth.js"></script>
+  <script src="../../js/roles.service.js"></script>
+  <script src="../../js/usuarios.service.js"></script>
+
+  <script>
+    requireAuthOrRedirect();
+
+    const alertBox = document.getElementById("alertBox");
+    const btnGuardar = document.getElementById("btnGuardar");
+    const subTitle = document.getElementById("subTitle");
+
+    const correo = document.getElementById("correo");
+    const usuario = document.getElementById("usuario");
+    const nombre = document.getElementById("nombre");
+    const id_rol = document.getElementById("id_rol");
+    const estado = document.getElementById("estado");
+    const password = document.getElementById("password");
+
+    const params = new URLSearchParams(window.location.search);
+    const id = params.get("id");
+
+    function showAlert(msg, type="danger"){
+        console.log("Mensaje capturado");
+        console.log(msg);
+      alertBox.className = `alert alert-${type}`;
+      alertBox.textContent = msg;
+      alertBox.classList.remove("d-none");
+    }
+    function hideAlert(){ alertBox.classList.add("d-none"); alertBox.textContent=""; }
+    function setLoading(v){ btnGuardar.disabled=v; btnGuardar.textContent=v?"Guardando...":"Guardar"; }
+
+    document.getElementById("btnVolver").addEventListener("click", () => window.location.href = "./listarUsuarios.html");
+
+    // Ojo password
+    document.getElementById("togglePassword").addEventListener("click", () => {
+      const hidden = password.type === "password";
+      password.type = hidden ? "text" : "password";
+      const icon = document.getElementById("togglePassword");
+      icon.classList.toggle("fa-eye");
+      icon.classList.toggle("fa-eye-slash");
+    });
+
+    async function cargarRoles(){
+    
+      const data = await rolesList();
+      const roles = Array.isArray(data) ? data : (data?.data || []);
+      id_rol.innerHTML = `<option value="">Seleccione</option>` + roles.map(r => {
+        const id = r.id_rol ?? r.id ?? r.idRol;
+        const name = r.nombre ?? r.name ?? id;
+        return `<option value="${id}">${name}</option>`;
+      }).join("");
+    }
+
+    async function cargarEdicion(){
+      if(!id) return;
+      subTitle.textContent = "Editando usuario #" + id;
+
+      const data = await usuariosGetById(id);
+      const u = data?.data || data;
+
+      correo.value = u.correo ?? u.email ?? "";
+      usuario.value = u.usuario ?? u.username ?? "";
+      nombre.value = u.nombre ?? u.full_name ?? u.nombres ?? "";
+      id_rol.value = u.id_rol ?? u.rol ?? u.role ?? u.idRol ?? "";
+      estado.value = u.estado ?? u.status ?? "activo";
+    }
+
+    document.getElementById("usuarioForm").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      hideAlert();
+      setLoading(true);
+
+      // Payload base (ajusta si tu backend usa nombres distintos)
+      const payload = {
+        id_rol: id_rol.value,
+        nombres: (nombre.value || "").trim() || null,
+        apellidos: "",
+        correo: correo.value.trim(),
+        usuario: (usuario.value || "").trim() || null,
+        estado: estado.value,
+        password: (password.value || "").trim(),
+        area_trabajo:""
+      };
+
+      // Solo envía password si está lleno
+      const pass = (password.value || "").trim();
+      if(pass) payload.password = pass;
+
+      try{
+        if(id) await usuariosUpdate(id, payload);
+        else await usuariosCreate(payload);
+        
+        showAlert(id ? "Usuario actualizado ✅" : "Usuario creado ✅", "success");
+        setTimeout(() => window.location.href = "./listarUsuarios.html", 450);
+      }catch(err){
+        showAlert(err.message || "No se pudo guardar");
+      }finally{
+        setLoading(false);
+      }
+    });
+
+    (async () => {
+      try{
+        await cargarRoles();
+        await cargarEdicion();
+      }catch(err){
+        showAlert(err.message || "Error cargando datos");
+      }
+    })();
+  </script>
+</body>
+</html>

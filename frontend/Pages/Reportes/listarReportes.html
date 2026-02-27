@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Reportes</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <link rel="stylesheet" href="../../css/bootstrap.min.css">
+  <link rel="stylesheet" href="../../css/style.css">
+  <link rel="stylesheet" href="../../css/responsive.css">
+
+  <style>
+    body{background:#f5f7fb;}
+    .page-center{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px 12px;}
+    .resource-card{width:100%;max-width:1100px;border:0;border-radius:16px;box-shadow:0 18px 45px rgba(0,0,0,.12);overflow:hidden;background:#fff;}
+    .resource-card-header{padding:22px 24px;border-bottom:1px solid rgba(0,0,0,.06);display:flex;gap:16px;align-items:center;justify-content:space-between;flex-wrap:wrap;}
+    .header-left{display:flex;gap:16px;align-items:center;}
+    .resource-card-header img{width:130px;height:auto;display:block;}
+    .resource-card-header h4{margin:0;font-weight:700;letter-spacing:.2px;}
+    .resource-card-header small{display:block;margin-top:4px;color:#6c757d;}
+    .resource-card-body{padding:18px 24px 24px;}
+    .form-control,.form-select{min-height:44px;border-radius:10px;}
+    .btn{border-radius:10px;min-height:42px;padding:10px 14px;font-weight:600;}
+    .toolbar{display:flex;gap:10px;align-items:center;justify-content:space-between;flex-wrap:wrap;margin-bottom:14px;}
+    .toolbar .left{display:flex;gap:10px;align-items:center;flex-wrap:wrap;width:100%;max-width:820px;}
+    .actions-col{width:260px;white-space:nowrap;}
+    .badge-soft{background:rgba(13,110,253,.10);color:#0d6efd;border:1px solid rgba(13,110,253,.18);font-weight:700;border-radius:999px;padding:6px 10px;display:inline-block;}
+    .empty-state{display:none;padding:18px;border:1px dashed rgba(0,0,0,.15);border-radius:12px;text-align:center;color:#6c757d;margin-top:12px;}
+  </style>
+</head>
+
+<body class="main-layout">
+  <div class="page-center">
+    <div class="resource-card">
+
+      <div class="resource-card-header">
+        <div class="header-left">
+          <img src="../../images/logo.png" alt="Logo">
+          <div>
+            <h4>Reportes</h4>
+            <small>Generar, consultar y descargar reportes</small>
+          </div>
+        </div>
+        <div class="d-flex gap-2">
+          <button class="btn btn-outline-secondary" id="btnVolver">Volver</button>
+          <button class="btn btn-primary" id="btnGenerar">+ Generar reporte</button>
+        </div>
+      </div>
+
+      <div class="resource-card-body">
+        <div id="alertBox" class="alert d-none" role="alert"></div>
+
+        <div class="toolbar">
+          <div class="left">
+            <input id="busqueda" class="form-control" placeholder="Buscar por nombre, tipo, estado...">
+            <select id="filtroTipo" class="form-select" style="max-width:240px;">
+              <option value="">Tipo: Todos</option>
+              <option value="tareas">Tareas</option>
+              <option value="recursos">Recursos</option>
+              <option value="usuarios">Usuarios</option>
+            </select>
+            <select id="filtroEstado" class="form-select" style="max-width:240px;">
+              <option value="">Estado: Todos</option>
+              <option value="generado">Generado</option>
+              <option value="pendiente">Pendiente</option>
+              <option value="fallido">Fallido</option>
+            </select>
+          </div>
+          <div class="right d-flex gap-2">
+            <button class="btn btn-outline-secondary" id="btnRefrescar">Refrescar</button>
+            <button class="btn btn-outline-secondary" id="btnLimpiar">Limpiar</button>
+          </div>
+        </div>
+
+        <div class="table-responsive">
+          <table class="table table-hover align-middle mb-0" id="tablaReportes">
+            <thead class="table-light">
+              <tr>
+                <th>Nombre</th>
+                <th>Tipo</th>
+                <th>Formato</th>
+                <th>Fecha</th>
+                <th>Estado</th>
+                <th class="actions-col text-end">Acciones</th>
+              </tr>
+            </thead>
+            <tbody id="tbodyReportes"></tbody>
+          </table>
+        </div>
+
+        <div class="empty-state" id="emptyState">No se encontraron reportes.</div>
+      </div>
+    </div>
+  </div>
+
+  <script src="../../js/jquery.min.js"></script>
+  <script src="../../js/bootstrap.bundle.min.js"></script>
+
+  <script src="../../js/config.js"></script>
+  <script src="../../js/api.js"></script>
+  <script src="../../js/menu.service.js"></script>
+  <script src="../../js/auth.js"></script>
+  <script src="../../js/reportes.service.js"></script>
+
+  <script>
+    requireAuthOrRedirect();
+
+    const alertBox = document.getElementById("alertBox");
+    const tbody = document.getElementById("tbodyReportes");
+    const emptyState = document.getElementById("emptyState");
+
+    const busqueda = document.getElementById("busqueda");
+    const filtroTipo = document.getElementById("filtroTipo");
+    const filtroEstado = document.getElementById("filtroEstado");
+
+    let reportes = [];
+
+    function showAlert(msg, type="danger"){
+      alertBox.className = `alert alert-${type}`;
+      alertBox.textContent = msg;
+      alertBox.classList.remove("d-none");
+    }
+    function hideAlert(){ alertBox.classList.add("d-none"); alertBox.textContent=""; }
+
+    function n(v){ return (v ?? "").toString().toLowerCase().trim(); }
+    function safe(v){ return (v ?? "").toString(); }
+    function badge(v){ return `<span class="badge-soft">${safe(v)}</span>`; }
+
+    function render(rows){
+      tbody.innerHTML = rows.map(r => {
+        const id = r.id_reporte ?? r.id ?? r.idReporte;
+        const nombre = r.nombre ?? r.name ?? ("Reporte #" + id);
+        const tipo = r.tipo ?? r.type ?? "-";
+        const formato = (r.formato ?? r.format ?? "-").toUpperCase();
+        const fecha = r.fecha ?? r.created_at ?? r.createdAt ?? "-";
+        const estado = r.estado ?? r.status ?? "-";
+        const url = r.url_descarga ?? r.url ?? r.download_url ?? "";
+
+        return `
+          <tr>
+            <td class="fw-semibold">${safe(nombre)}</td>
+            <td>${badge(tipo)}</td>
+            <td>${badge(formato)}</td>
+            <td>${safe(fecha)}</td>
+            <td>${badge(estado)}</td>
+            <td class="text-end">
+              <button class="btn btn-sm btn-outline-primary me-1" data-action="ver" data-id="${id}">Ver</button>
+              ${url ? `<a class="btn btn-sm btn-outline-success me-1" href="${url}" target="_blank">Descargar</a>` : ``}
+              <button class="btn btn-sm btn-outline-danger" data-action="eliminar" data-id="${id}">Eliminar</button>
+            </td>
+          </tr>
+        `;
+      }).join("");
+
+      emptyState.style.display = rows.length ? "none" : "block";
+    }
+
+    function aplicar(){
+      const q = n(busqueda.value);
+      const t = n(filtroTipo.value);
+      const e = n(filtroEstado.value);
+
+      const filtered = reportes.filter(r => {
+        const texto = n(`${r.nombre ?? r.name} ${r.tipo ?? r.type} ${r.estado ?? r.status} ${r.formato ?? r.format}`);
+        const rt = n(r.tipo ?? r.type);
+        const re = n(r.estado ?? r.status);
+
+        return (!q || texto.includes(q)) && (!t || rt === t) && (!e || re === e);
+      });
+
+      render(filtered);
+    }
+
+    async function cargar(){
+      hideAlert();
+      try{
+        const data = await reportesGetDashboard() //reportesList();
+        reportes = Array.isArray(data) ? data : (data?.data || []);
+        console.log('Lista completa de reporte ==========>>>>>>>>>>>>>>>>>>>>>>>>>>>>>');
+        console.log(reportes);
+        aplicar();
+      }catch(err){
+        showAlert(err.message || "No se pudo cargar reportes");
+        reportes = [];
+        render([]);
+      }
+    }
+
+    document.getElementById("btnVolver").addEventListener("click", () => window.location.href = "../bienvenida.html");
+    document.getElementById("btnGenerar").addEventListener("click", () => window.location.href = "./generarReporte.html");
+    document.getElementById("btnRefrescar").addEventListener("click", cargar);
+    document.getElementById("btnLimpiar").addEventListener("click", () => {
+      busqueda.value = ""; filtroTipo.value = ""; filtroEstado.value = "";
+      aplicar();
+    });
+
+    busqueda.addEventListener("input", aplicar);
+    filtroTipo.addEventListener("change", aplicar);
+    filtroEstado.addEventListener("change", aplicar);
+
+    document.getElementById("tablaReportes").addEventListener("click", (ev) => {
+      const btn = ev.target.closest("button[data-action]");
+      if(!btn) return;
+
+      const action = btn.dataset.action;
+      const id = btn.dataset.id;
+
+      if(action === "ver") return window.location.href = "./verReporte.html?id=" + encodeURIComponent(id);
+
+      if(action === "eliminar"){
+        alert("Eliminar reporte ID: " + id + " (pendiente de endpoint DELETE)");
+      }
+    });
+
+    cargar();
+  </script>
+</body>
+</html>

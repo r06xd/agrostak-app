@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Detalle de Reporte</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <link rel="stylesheet" href="../../css/bootstrap.min.css">
+  <link rel="stylesheet" href="../../css/style.css">
+  <link rel="stylesheet" href="../../css/responsive.css">
+
+  <style>
+    body{background:#f5f7fb;}
+    .page-center{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px 12px;}
+    .resource-card{width:100%;max-width:860px;border:0;border-radius:16px;box-shadow:0 18px 45px rgba(0,0,0,.12);overflow:hidden;background:#fff;}
+    .resource-card-header{padding:22px 24px;border-bottom:1px solid rgba(0,0,0,.06);display:flex;gap:16px;align-items:center;justify-content:space-between;flex-wrap:wrap;}
+    .header-left{display:flex;gap:16px;align-items:center;}
+    .resource-card-header img{width:130px;height:auto;display:block;}
+    .resource-card-body{padding:22px 24px 24px;}
+    .btn{border-radius:10px;min-height:42px;padding:10px 16px;font-weight:600;}
+    .kv{display:grid;grid-template-columns:160px 1fr;gap:10px;margin:10px 0;}
+    .kv b{color:#343a40;}
+    .box{background:#f8fafc;border:1px solid rgba(0,0,0,.08);border-radius:12px;padding:14px;}
+  </style>
+</head>
+
+<body class="main-layout">
+  <div class="page-center">
+    <div class="resource-card">
+
+      <div class="resource-card-header">
+        <div class="header-left">
+          <img src="../../images/logo.png" alt="Logo">
+          <div>
+            <h4>Detalle de Reporte</h4>
+            <small id="subTitle">Cargando...</small>
+          </div>
+        </div>
+        <div class="d-flex gap-2">
+          <button class="btn btn-outline-secondary" id="btnVolver">Volver</button>
+          <a class="btn btn-success d-none" id="btnDescargar" target="_blank">Descargar</a>
+        </div>
+      </div>
+
+      <div class="resource-card-body">
+        <div id="alertBox" class="alert d-none" role="alert"></div>
+
+        <div class="box" id="detalle">
+          <div class="kv"><b>Nombre</b><span id="dNombre">—</span></div>
+          <div class="kv"><b>Tipo</b><span id="dTipo">—</span></div>
+          <div class="kv"><b>Formato</b><span id="dFormato">—</span></div>
+          <div class="kv"><b>Fecha</b><span id="dFecha">—</span></div>
+          <div class="kv"><b>Estado</b><span id="dEstado">—</span></div>
+          <div class="kv"><b>Descripción</b><span id="dDesc">—</span></div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <script src="../../js/jquery.min.js"></script>
+  <script src="../../js/bootstrap.bundle.min.js"></script>
+
+  <script src="../../js/config.js"></script>
+  <script src="../../js/api.js"></script>
+  <script src="../../js/menu.service.js"></script>
+  <script src="../../js/auth.js"></script>
+  <script src="../../js/reportes.service.js"></script>
+
+  <script>
+    requireAuthOrRedirect();
+
+    const alertBox = document.getElementById("alertBox");
+    const params = new URLSearchParams(location.search);
+    const id = params.get("id");
+
+    const subTitle = document.getElementById("subTitle");
+    const btnDescargar = document.getElementById("btnDescargar");
+
+    function showAlert(msg, type="danger"){
+      alertBox.className = `alert alert-${type}`;
+      alertBox.textContent = msg;
+      alertBox.classList.remove("d-none");
+    }
+
+    document.getElementById("btnVolver").addEventListener("click", () => window.location.href = "./listarReportes.html");
+
+    function setText(idEl, v){ document.getElementById(idEl).textContent = (v ?? "—").toString(); }
+
+    async function cargar(){
+      if(!id) return showAlert("Falta el parámetro id en la URL");
+
+      try{
+        const data = await reportesGetById(id);
+        const r = data?.data || data;
+
+        subTitle.textContent = `Reporte #${id}`;
+
+        setText("dNombre", r.nombre ?? r.name);
+        setText("dTipo", r.tipo ?? r.type);
+        setText("dFormato", (r.formato ?? r.format ?? "").toUpperCase());
+        setText("dFecha", r.fecha ?? r.created_at ?? r.createdAt);
+        setText("dEstado", r.estado ?? r.status);
+        setText("dDesc", r.descripcion ?? r.description ?? "—");
+
+        const url = r.url_descarga ?? r.url ?? r.download_url;
+        if(url){
+          btnDescargar.href = url;
+          btnDescargar.classList.remove("d-none");
+        }
+      }catch(err){
+        showAlert(err.message || "No se pudo cargar el reporte");
+        subTitle.textContent = "Error";
+      }
+    }
+
+    cargar();
+  </script>
+</body>
+</html>

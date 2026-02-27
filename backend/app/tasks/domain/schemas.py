@@ -25,6 +25,21 @@ class TareaUpdate(BaseModel):
     porcentaje_avance: Optional[int] = Field(None, ge=0, le=100)
     es_recurrente: Optional[bool] = None
 
+class TareaListOut(BaseModel):
+    id_tarea: int
+    titulo: str
+    estado: str
+    prioridad: str
+    porcentaje_avance: int
+
+    # los que te faltan: ponlos opcionales o inclúyelos
+    fecha_creacion: Optional[datetime] = None
+    fecha_inicio_prog: Optional[datetime] = None
+    fecha_fin_prog: Optional[datetime] = None
+    fecha_fin_real: Optional[datetime] = None
+    es_recurrente: Optional[bool] = None
+
+    asignado_a: Optional[str] = None
 
 class TareaRead(BaseModel):
     id_tarea: int

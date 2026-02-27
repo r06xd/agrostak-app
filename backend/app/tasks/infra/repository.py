@@ -1,10 +1,13 @@
 from sqlalchemy.orm import Session
 from sqlalchemy import desc
 from typing import List, Optional
+from datetime import datetime
 
 from app.tasks.infra.models import (
     TareaORM, AsignacionTareaORM, HistorialEstadoTareaORM, ComentarioTareaORM
 )
+from app.identity.infra.models import UsuarioORM
+
 from app.tasks.domain.enums import EstadoTarea
 
 
@@ -15,6 +18,27 @@ class TasksRepository:
     # ----- TAREAS -----
     def list_tareas(self) -> List[TareaORM]:
         return self.db.query(TareaORM).all()
+    
+    def list_tareas_con_asignado(self):
+        return (
+            self.db.query(
+                TareaORM,
+                UsuarioORM.nombres,
+                UsuarioORM.apellidos
+            )
+            .outerjoin(
+                AsignacionTareaORM,
+                AsignacionTareaORM.id_tarea == TareaORM.id_tarea
+            )
+            .outerjoin(
+                UsuarioORM,
+                UsuarioORM.id_usuario == AsignacionTareaORM.id_usuario
+            )
+            .filter(
+                (AsignacionTareaORM.activo == 1) | (AsignacionTareaORM.activo.is_(None))
+            )
+            .all()
+        )   
 
     def get_tarea(self, id_tarea: int) -> Optional[TareaORM]:
         return self.db.query(TareaORM).filter(TareaORM.id_tarea == id_tarea).first()
@@ -40,6 +64,15 @@ class TasksRepository:
         self.db.commit()
         self.db.refresh(asignacion)
         return asignacion
+    
+    def update_asignacion(self, asignacion: AsignacionTareaORM) -> AsignacionTareaORM:
+        self.db.commit()
+        self.db.refresh(asignacion)
+        return asignacion
+    
+    def delete_asignacion(self, asignacion: AsignacionTareaORM) -> None:
+        self.db.delete(asignacion)
+        self.db.commit()
 
     def list_asignaciones(self, id_tarea: int) -> List[AsignacionTareaORM]:
         return self.db.query(AsignacionTareaORM).filter(AsignacionTareaORM.id_tarea == id_tarea).all()

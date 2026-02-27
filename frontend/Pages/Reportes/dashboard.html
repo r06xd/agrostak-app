@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Dashboard de Reportes</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <link rel="stylesheet" href="../../css/bootstrap.min.css">
+  <link rel="stylesheet" href="../../css/style.css">
+  <link rel="stylesheet" href="../../css/responsive.css">
+
+  <style>
+    body{background:#f5f7fb;}
+    .page-center{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px 12px;}
+    .resource-card{width:100%;max-width:1100px;border:0;border-radius:16px;box-shadow:0 18px 45px rgba(0,0,0,.12);overflow:hidden;background:#fff;}
+    .resource-card-header{padding:22px 24px;border-bottom:1px solid rgba(0,0,0,.06);display:flex;gap:16px;align-items:center;justify-content:space-between;flex-wrap:wrap;}
+    .header-left{display:flex;gap:16px;align-items:center;}
+    .resource-card-header img{width:130px;height:auto;display:block;}
+    .resource-card-header h4{margin:0;font-weight:700;letter-spacing:.2px;}
+    .resource-card-header small{display:block;margin-top:4px;color:#6c757d;}
+    .resource-card-body{padding:18px 24px 24px;}
+
+    .btn{border-radius:10px;min-height:42px;padding:10px 14px;font-weight:600;}
+    .kpi-grid{display:grid;grid-template-columns:repeat(12,1fr);gap:12px;}
+    .kpi{grid-column: span 4; border:1px solid rgba(0,0,0,.08); border-radius:14px; padding:14px 14px; background:#fff;}
+    .kpi .label{color:#6c757d;font-weight:600;font-size:.95rem;margin-bottom:6px;}
+    .kpi .value{font-size:1.75rem;font-weight:800;letter-spacing:.2px;}
+    .kpi .hint{color:#6c757d;font-size:.9rem;margin-top:6px;}
+
+    .section-title{margin:18px 0 10px;font-weight:800;}
+    .box{background:#f8fafc;border:1px solid rgba(0,0,0,.08);border-radius:14px;padding:14px;}
+    .rowline{display:flex;justify-content:space-between;gap:12px;padding:10px 0;border-bottom:1px solid rgba(0,0,0,.06);}
+    .rowline:last-child{border-bottom:none;}
+    .pill{border-radius:999px;padding:6px 10px;font-weight:700;border:1px solid rgba(13,110,253,.18);background:rgba(13,110,253,.10);color:#0d6efd;}
+    .muted{color:#6c757d;}
+    @media (max-width: 992px){ .kpi{grid-column: span 6;} }
+    @media (max-width: 576px){ .kpi{grid-column: span 12;} }
+  </style>
+</head>
+
+<body class="main-layout">
+  <div class="page-center">
+    <div class="resource-card">
+
+      <div class="resource-card-header">
+        <div class="header-left">
+          <img src="../../images/logo.png" alt="Logo">
+          <div>
+            <h4>Dashboard de Reportes</h4>
+            <small>Resumen de tareas y recursos</small>
+          </div>
+        </div>
+
+        <div class="d-flex gap-2">
+          <button class="btn btn-outline-secondary" id="btnVolver">Volver</button>
+          <button class="btn btn-outline-secondary" id="btnRefrescar">Refrescar</button>
+        </div>
+      </div>
+
+      <div class="resource-card-body">
+        <div id="alertBox" class="alert d-none" role="alert"></div>
+
+        <!-- KPIs -->
+        <div class="section-title">Tareas</div>
+        <div class="kpi-grid">
+          <div class="kpi">
+            <div class="label">Total</div>
+            <div class="value" id="t_total">—</div>
+            <div class="hint">Todas las tareas registradas</div>
+          </div>
+
+          <div class="kpi">
+            <div class="label">Pendientes</div>
+            <div class="value" id="t_pendientes">—</div>
+            <div class="hint">Aún no iniciadas</div>
+          </div>
+
+          <div class="kpi">
+            <div class="label">En progreso</div>
+            <div class="value" id="t_progreso">—</div>
+            <div class="hint">Actualmente en ejecución</div>
+          </div>
+
+          <div class="kpi">
+            <div class="label">Completadas</div>
+            <div class="value" id="t_completadas">—</div>
+            <div class="hint">Finalizadas exitosamente</div>
+          </div>
+
+          <div class="kpi">
+            <div class="label">Canceladas</div>
+            <div class="value" id="t_canceladas">—</div>
+            <div class="hint">No se continuarán</div>
+          </div>
+
+          <div class="kpi">
+            <div class="label">Vencidas</div>
+            <div class="value" id="t_vencidas">—</div>
+            <div class="hint">Fuera de fecha</div>
+          </div>
+        </div>
+
+        <!-- Resumen tipo lista -->
+        <div class="box mt-3">
+          <div class="rowline">
+            <div class="fw-semibold">Estado</div>
+            <div class="fw-semibold">Cantidad</div>
+          </div>
+
+          <div class="rowline">
+            <div class="muted">Pendientes</div>
+            <div class="pill" id="pill_pendientes">—</div>
+          </div>
+          <div class="rowline">
+            <div class="muted">En progreso</div>
+            <div class="pill" id="pill_progreso">—</div>
+          </div>
+          <div class="rowline">
+            <div class="muted">Completadas</div>
+            <div class="pill" id="pill_completadas">—</div>
+          </div>
+          <div class="rowline">
+            <div class="muted">Canceladas</div>
+            <div class="pill" id="pill_canceladas">—</div>
+          </div>
+          <div class="rowline">
+            <div class="muted">Vencidas</div>
+            <div class="pill" id="pill_vencidas">—</div>
+          </div>
+        </div>
+
+        <div class="section-title">Recursos</div>
+        <div class="kpi-grid">
+          <div class="kpi">
+            <div class="label">Total</div>
+            <div class="value" id="r_total">—</div>
+            <div class="hint">Recursos registrados</div>
+          </div>
+
+          <div class="kpi">
+            <div class="label">Sin stock</div>
+            <div class="value" id="r_sin_stock">—</div>
+            <div class="hint">Requieren reposición</div>
+          </div>
+
+          <div class="kpi">
+            <div class="label">En mantenimiento</div>
+            <div class="value" id="r_mantenimiento">—</div>
+            <div class="hint">No disponibles temporalmente</div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <script src="../../js/jquery.min.js"></script>
+  <script src="../../js/bootstrap.bundle.min.js"></script>
+
+  <script src="../../js/config.js"></script>
+  <script src="../../js/api.js"></script>
+  <script src="../../js/menu.service.js"></script>
+  <script src="../../js/auth.js"></script>
+
+  <script src="../../js/reportes.service.js"></script>
+
+  <script>
+    requireAuthOrRedirect();
+
+    const alertBox = document.getElementById("alertBox");
+    function showAlert(msg, type="danger"){
+      alertBox.className = `alert alert-${type}`;
+      alertBox.textContent = msg;
+      alertBox.classList.remove("d-none");
+    }
+    function hideAlert(){ alertBox.classList.add("d-none"); alertBox.textContent=""; }
+
+    function setText(id, v){
+      document.getElementById(id).textContent = (v ?? 0).toString();
+    }
+
+    async function cargar(){
+      hideAlert();
+      try{
+        const data = await dashboardSummaryGet();
+        const d = data?.data || data;
+
+        setText("t_total", d.tareas_total);
+        setText("t_pendientes", d.tareas_pendientes);
+        setText("t_progreso", d.tareas_en_progreso);
+        setText("t_completadas", d.tareas_completadas);
+        setText("t_canceladas", d.tareas_canceladas);
+        setText("t_vencidas", d.tareas_vencidas);
+
+        setText("pill_pendientes", d.tareas_pendientes);
+        setText("pill_progreso", d.tareas_en_progreso);
+        setText("pill_completadas", d.tareas_completadas);
+        setText("pill_canceladas", d.tareas_canceladas);
+        setText("pill_vencidas", d.tareas_vencidas);
+
+        setText("r_total", d.recursos_total);
+        setText("r_sin_stock", d.recursos_sin_stock);
+        setText("r_mantenimiento", d.recursos_en_mantenimiento);
+
+      }catch(err){
+        showAlert(err.message || "No se pudo cargar el resumen del dashboard");
+      }
+    }
+
+    document.getElementById("btnRefrescar").addEventListener("click", cargar);
+
+    document.getElementById("btnVolver").addEventListener("click", () => {
+      // Ajusta si tu bienvenida está en otro path
+      window.location.href = "../bienvenida_dos.html";
+    });
+
+    cargar();
+  </script>
+</body>
+</html>

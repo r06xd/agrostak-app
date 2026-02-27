@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Gestión de Roles</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="../../css/bootstrap.min.css">
+  <link rel="stylesheet" href="../../css/style.css">
+  <link rel="stylesheet" href="../../css/responsive.css">
+
+  <link rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+
+  <style>
+    body{background:#f5f7fb;}
+    .page-center{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px 12px;}
+    .resource-card{width:100%;max-width:760px;border:0;border-radius:16px;box-shadow:0 18px 45px rgba(0,0,0,.12);overflow:hidden;background:#fff;}
+    .resource-card-header{padding:22px 24px;border-bottom:1px solid rgba(0,0,0,.06);display:flex;gap:16px;align-items:center;}
+    .resource-card-header img{width:130px;height:auto;display:block;}
+    .resource-card-header h4{margin:0;font-weight:700;letter-spacing:.2px;}
+    .resource-card-header small{display:block;margin-top:4px;color:#6c757d;}
+    .resource-card-body{padding:22px 24px 24px;}
+    .form-label{font-weight:600;color:#343a40;margin-bottom:6px;}
+    .form-control{min-height:44px;border-radius:10px;}
+    textarea.form-control{min-height:110px;resize:vertical;}
+    .btn{border-radius:10px;min-height:42px;padding:10px 16px;font-weight:600;}
+    .actions{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;padding-top:10px;}
+  </style>
+</head>
+
+<body class="main-layout">
+  <div class="page-center">
+    <div class="resource-card">
+
+      <div class="resource-card-header">
+        <img src="../../images/logo.png" alt="Logo">
+        <div>
+          <h4>Gestión de Roles</h4>
+          <small id="subTitle">Crear / Editar rol</small>
+        </div>
+      </div>
+
+      <div class="resource-card-body">
+        <div id="alertBox" class="alert d-none" role="alert"></div>
+
+        <form id="rolForm">
+          <div class="row g-3">
+            <div class="col-md-6">
+              <label class="form-label" for="nombre">Nombre</label>
+              <input id="nombre" class="form-control" required maxlength="80" placeholder="Ej: Administrador">
+            </div>
+            <div class="col-md-6">
+              <label class="form-label" for="clave">Clave</label>
+              <input id="clave" class="form-control" maxlength="80" placeholder="Ej: admin">
+            </div>
+            <div class="col-md-12">
+              <label class="form-label" for="descripcion">Descripción</label>
+              <textarea id="descripcion" class="form-control" placeholder="Opcional"></textarea>
+            </div>
+          </div>
+
+          <div class="actions">
+            <button type="button" class="btn btn-outline-secondary" id="btnVolver">Volver</button>
+            <div class="d-flex gap-2">
+              <button type="reset" class="btn btn-outline-secondary">Limpiar</button>
+              <button type="submit" class="btn btn-primary" id="btnGuardar">
+                <i class="fa-solid fa-floppy-disk"></i>
+              </button>
+            </div>
+          </div>
+        </form>
+
+      </div>
+    </div>
+  </div>
+
+  <script src="../js/jquery.min.js"></script>
+  <script src="../js/bootstrap.bundle.min.js"></script>
+
+  <script src="../js/config.js"></script>
+  <script src="../js/api.js"></script>
+  <script src="../js/menu.service.js"></script>
+  <script src="../js/auth.js"></script>
+  <script src="../js/roles.service.js"></script>
+
+  <script>
+    requireAuthOrRedirect();
+
+    const alertBox = document.getElementById("alertBox");
+    const btnGuardar = document.getElementById("btnGuardar");
+    const subTitle = document.getElementById("subTitle");
+
+    const nombre = document.getElementById("nombre");
+    const clave = document.getElementById("clave");
+    const descripcion = document.getElementById("descripcion");
+
+    const params = new URLSearchParams(window.location.search);
+    const id = params.get("id");
+
+    function showAlert(msg, type="danger"){
+      alertBox.className = `alert alert-${type}`;
+      alertBox.textContent = msg;
+      alertBox.classList.remove("d-none");
+    }
+    function hideAlert(){ alertBox.classList.add("d-none"); alertBox.textContent=""; }
+    function setLoading(v){ btnGuardar.disabled=v; btnGuardar.textContent=v?"Guardando...":"Guardar"; }
+
+    document.getElementById("btnVolver").addEventListener("click", () => window.location.href = "./listarRoles.html");
+
+    async function cargarEdicion(){
+      if(!id) return;
+      subTitle.textContent = "Editando rol #" + id;
+      try{
+        const data = await rolesGetById(id);
+        const r = data?.data || data;
+        nombre.value = r.nombre ?? r.name ?? "";
+        clave.value = r.clave ?? r.key ?? "";
+        descripcion.value = r.descripcion ?? r.description ?? "";
+      }catch(err){
+        showAlert(err.message || "No se pudo cargar el rol");
+      }
+    }
+
+    document.getElementById("rolForm").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      hideAlert();
+      setLoading(true);
+
+      const payload = {
+        nombre: nombre.value.trim(),
+        clave: (clave.value || "").trim() || null,
+        descripcion: (descripcion.value || "").trim() || null
+      };
+
+      try{
+        if(id) await rolesUpdate(id, payload);
+        else await rolesCreate(payload);
+
+        showAlert(id ? "Rol actualizado ✅" : "Rol creado ✅", "success");
+        setTimeout(() => window.location.href = "./listarRoles.html", 450);
+      }catch(err){
+        showAlert(err.message || "No se pudo guardar");
+      }finally{
+        setLoading(false);
+      }
+    });
+
+    cargarEdicion();
+  </script>
+</body>
+</html>

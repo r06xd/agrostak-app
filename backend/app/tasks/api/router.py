@@ -8,16 +8,21 @@ from app.identity.api.deps import get_current_user
 from app.tasks.domain.schemas import (
     TareaCreate, TareaUpdate, TareaRead,
     AsignacionCreate, AsignacionRead,
-    ComentarioCreate, ComentarioRead
+    ComentarioCreate, ComentarioRead,TareaListOut
 )
 from app.tasks.domain import services
 
 router = APIRouter(prefix="/tareas", tags=["tareas"])
 
 
-@router.get("/", response_model=list[TareaRead])
-def list_tareas(db: Session = Depends(get_session), _=Depends(get_current_user)):
-    return services.listar_tareas(db)
+@router.get("/", response_model=list[TareaListOut])
+def list_tareas(db: Session = Depends(get_session), user=Depends(get_current_user)):
+    print('Entra a buscar tareas')
+    if user.id_rol == 1:
+        return services.listar_tareas(db)
+    else:
+        print('Entra a buscar por usuario', user.id_usuario)
+        services.mis_tareas(db, id_usuario=user.id_usuario)
 
 
 @router.post("/", response_model=TareaRead, status_code=status.HTTP_201_CREATED)
@@ -44,6 +49,10 @@ def delete_tarea(id_tarea: int, db: Session = Depends(get_session), _=Depends(ge
 # Asignaciones
 @router.post("/{id_tarea}/assign", response_model=AsignacionRead, status_code=status.HTTP_201_CREATED)
 def assign_user(id_tarea: int, data: AsignacionCreate, db: Session = Depends(get_session), user=Depends(get_current_user)):
+    return services.asignar_usuario(db, id_tarea, data, id_usuario_actor=user.id_usuario)
+
+@router.post("/{id_tarea}/assignUser/{id_usuario}", response_model=AsignacionRead, status_code=status.HTTP_201_CREATED)
+def assign_user(id_tarea: int, id_usuario: int, data: AsignacionCreate, db: Session = Depends(get_session), user=Depends(get_current_user)):
     return services.asignar_usuario(db, id_tarea, data, id_usuario_actor=user.id_usuario)
 
 

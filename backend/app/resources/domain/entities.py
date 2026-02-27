@@ -13,7 +13,7 @@ class TipoRecurso(str, Enum):
 class EstadoRecurso(str, Enum):
     operativo = "operativo"
     mantenimiento = "mantenimiento"
-    baja = "baja"
+    inactivo = "inactivo"
 
 
 @dataclass

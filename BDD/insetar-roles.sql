@@ -39,3 +39,11 @@ INSERT INTO menu_items (clave,label,path,icon,orden,permiso_clave,activo) VALUES
 ('menu_recursos','Recursos','/recursos','box',3,'RECURSOS_CRUD',1),
 ('menu_reportes','Reportes','/reportes','chart',4,'REPORTES_VER',1)
 ON DUPLICATE KEY UPDATE label=VALUES(label), path=VALUES(path), icon=VALUES(icon), orden=VALUES(orden), permiso_clave=VALUES(permiso_clave), activo=VALUES(activo);
+
+#Permisos para reportes
+INSERT INTO permisos (clave, descripcion, modulo)
+VALUES ('REPORTES_VER','Ver dashboard/reportes','reports')
+ON DUPLICATE KEY UPDATE descripcion=VALUES(descripcion), modulo=VALUES(modulo);
+
+INSERT IGNORE INTO rol_permisos (id_rol, id_permiso)
+SELECT 1, id_permiso FROM permisos WHERE clave='REPORTES_VER';

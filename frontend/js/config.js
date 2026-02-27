@@ -5,8 +5,13 @@ window.APP_CONFIG = {
   ENDPOINTS: {
     LOGIN: "/identity/login",
     MENU: "/identity/menu",
-    RECURSOS: "/recursos", // <-- luego lo ajustamos cuando me pases el endpoint real
-    TAREAS: "/tareas"
+    RECURSOS: "/recursos",
+    ROLES: "/identity/roles",
+    USUARIOS: "/identity/usuarios",
+    TAREAS: "/tareas",
+    REPORTES: "/reports",
+    REPORTES_GENERAR: "/reportes/generar",
+    DASHBOARD_SUMMARY: "/reports/dashboard"
   },
   STORAGE: {
     TOKEN_KEY: "omar_access_token",

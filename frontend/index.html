@@ -64,8 +64,9 @@
 <!-- Módulo (lo que te envié antes) -->
 <script src="js/config.js"></script>
 <script src="js/api.js"></script>
-<script src="../js/menu.service.js"></script>
+<script src="js/menu.service.js"></script>
 <script src="js/auth.js"></script>
+<script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
 
 <script>
   const alertBox = document.getElementById("alertBox");
@@ -74,9 +75,9 @@
   const passwordInput = document.getElementById("password");
   const togglePassword = document.getElementById("togglePassword");
 
+  // ---------- UI helpers ----------
   togglePassword.addEventListener("click", () => {
     const isHidden = passwordInput.type === "password";
-
     passwordInput.type = isHidden ? "text" : "password";
     togglePassword.classList.toggle("fa-eye");
     togglePassword.classList.toggle("fa-eye-slash");
@@ -87,17 +88,83 @@
     alertBox.textContent = message;
     alertBox.classList.remove("d-none");
   }
-
   function hideAlert() {
     alertBox.classList.add("d-none");
     alertBox.textContent = "";
   }
-
   function setLoading(isLoading) {
     btnLogin.disabled = isLoading;
     btnLogin.textContent = isLoading ? "Ingresando..." : "Ingresar";
   }
 
+  async function identityMe() {
+    return apiRequest("/identity/me", { method: "GET", auth: true });
+  }
+
+  // ---------- OneSignal init (NO debe bloquear el login) ----------
+  window.OneSignalDeferred = window.OneSignalDeferred || [];
+
+  let osInited = false;
+  let osInitError = null;
+
+  OneSignalDeferred.push(async function (OneSignal) {
+    try {
+      await OneSignal.init({
+        appId: "dc9072ed-f3d4-4fd3-8051-623f4f3a2a09",
+        notifyButton: { enable: false },
+        serviceWorkerParam: { scope: "/" },
+        serviceWorkerPath: "/OneSignalSDKWorker.js",
+        serviceWorkerUpdaterPath: "/OneSignalSDKUpdaterWorker.js",
+      });
+
+      osInited = true;
+      console.log("✅ OneSignal init OK");
+    } catch (e) {
+      osInitError = e;
+      console.warn("⚠ OneSignal init falló (no bloquea login):", e);
+    }
+  });
+
+  // ---------- Vincular usuario (best effort, jamás bloquea) ----------
+  async function linkOneSignalUserBestEffort(idUsuario) {
+    try {
+      // 1) Permiso: debe ser gesto de usuario -> lo llamamos desde submit
+      let permission = Notification.permission;
+      if (permission === "default") {
+        permission = await Notification.requestPermission();
+      }
+      if (permission !== "granted") {
+        console.log("⚠ Notificaciones no permitidas:", permission);
+        return;
+      }
+
+      // 2) Esperar un poquito a init, pero con timeout (NO cuelga)
+      const start = Date.now();
+      while (!osInited && !osInitError && (Date.now() - start) < 1200) {
+        await new Promise(r => setTimeout(r, 50));
+      }
+
+      if (!osInited) {
+        console.warn("⚠ OneSignal no listo (timeout/init error). Se sigue normal.");
+        return;
+      }
+
+      // 3) Login OneSignal (external_user_id)
+      OneSignalDeferred.push(async function (OneSignal) {
+        await OneSignal.login(String(idUsuario));
+        if (OneSignal.User?.PushSubscription?.optIn) {
+          await OneSignal.User.PushSubscription.optIn();
+        }
+        console.log("✅ OneSignal vinculado:", idUsuario);
+        console.log("✅ PushSubscription.id:", OneSignal.User?.PushSubscription?.id ?? null);
+      });
+
+    } catch (e) {
+      console.warn("⚠ OneSignal link falló (no bloquea):", e);
+    }
+  }
+
+  // ---------- LOGIN ----------
   document.getElementById("loginForm").addEventListener("submit", async (e) => {
     e.preventDefault();
     hideAlert();
@@ -107,16 +174,30 @@
     const password = document.getElementById("password").value;
 
     try {
+      // 1) Login backend
       await loginRequest(correo, password);
-      // Ajusta a tu ruta real
+
+      // 2) Obtener usuario
+      const me = await identityMe();
+      const idUsuario = me?.id_usuario ?? me?.data?.id_usuario;
+
+      if (idUsuario) {
+        console.log("usuario logeado",idUsuario)
+        localStorage.setItem("id_usuario", String(idUsuario));
+
+        // 3) OneSignal: intentar vincular (NO await para no bloquear)
+        await linkOneSignalUserBestEffort(idUsuario);
+      }
+
+      // 4) SIEMPRE redirigir
       window.location.href = "Pages/bienvenida_dos.html";
+
     } catch (err) {
-      showAlert(err.message || "Error al iniciar sesión");
+      showAlert(err?.message || "Error al iniciar sesión");
     } finally {
       setLoading(false);
     }
   });
 </script>
-
 </body>
 </html>

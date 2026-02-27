@@ -8,6 +8,8 @@
   <link rel="stylesheet" href="../../css/bootstrap.min.css">
   <link rel="stylesheet" href="../../css/style.css">
   <link rel="stylesheet" href="../../css/responsive.css">
+  <link rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
 
   <style>
     body{ background:#f5f7fb; }
@@ -62,8 +64,15 @@
         </div>
 
         <div class="header-right d-flex gap-2">
-          <button type="button" class="btn btn-outline-secondary" id="btnRefrescar">Refrescar</button>
-          <button type="button" class="btn btn-primary" id="btnCrear">+ Crear tarea</button>
+          <button class="btn btn-primary" id="btnHome">
+            <i class="fa-solid fa-house"></i>
+          </button>
+          <button type="button" class="btn btn-primary" id="btnRefrescar">
+            <i class="fa-solid fa-rotate-right"></i>
+          </button>
+          <button type="button" class="btn btn-primary" id="btnCrear">
+            <i class="fa-solid fa-plus"></i>
+          </button>
         </div>
       </div>
 
@@ -87,7 +96,9 @@
           </div>
 
           <div class="right">
-            <button type="button" class="btn btn-outline-secondary" id="btnLimpiarFiltros">Limpiar</button>
+            <button type="button" class="btn btn-outline-secondary" id="btnLimpiarFiltros">
+              <i class="fa-solid fa-eraser"></i>
+            </button>
           </div>
         </div>
 
@@ -98,7 +109,7 @@
                 <th>Título</th>
                 <th>Prioridad</th>
                 <th>Estado</th>
-                <th>Fecha límite</th>
+                <th>Responsable</th>
                 <th class="actions-col text-end">Acciones</th>
               </tr>
             </thead>
@@ -145,13 +156,16 @@
           <td class="fw-semibold">${safe(t.titulo ?? t.nombre ?? t.title)}</td>
           <td>${badge(t.prioridad ?? "-")}</td>
           <td>${badge(t.estado ?? "-")}</td>
-          <td>${safe(t.fecha_limite ?? t.fechaLimite ?? t.due_date ?? "-")}</td>
+          <td>${safe(t.asignado_a ?? "-")}</td>
           <td class="text-end">
             <button class="btn btn-sm btn-outline-primary me-1" data-action="editar" data-id="${t.id_tarea ?? t.id ?? t.idTarea}">
-              Editar
+              <i class="fa-solid fa-pen-to-square"></i>
             </button>
             <button class="btn btn-sm btn-outline-danger" data-action="eliminar" data-id="${t.id_tarea ?? t.id ?? t.idTarea}">
-              Eliminar
+              <i class="fa-solid fa-trash"></i>
+            </button>
+            <button class="btn btn-sm btn-outline-success" data-action="asignar" data-id="${t.id_tarea ?? t.id ?? t.idTarea}">
+            <i class="fa-solid fa-user-plus"></i>
             </button>
           </td>
         </tr>
@@ -192,6 +206,8 @@
         render([]);
       }
     }
+
+    document.getElementById("btnHome").addEventListener("click", () => window.location.href = "./../bienvenida_dos.html");
 
     document.getElementById("btnCrear").addEventListener("click", () => {
       window.location.href = "./tareas.html";
@@ -234,6 +250,7 @@
           alert(err.message || "No se pudo eliminar la tarea");
         }
       }
+      if(action === "asignar"){window.location.href = "./asignarTarea.html?tarea=" + encodeURIComponent(id);}
     });
 
     cargar();

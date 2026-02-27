@@ -8,6 +8,8 @@
   <link rel="stylesheet" href="../css/bootstrap.min.css">
   <link rel="stylesheet" href="../css/style.css">
   <link rel="stylesheet" href="../css/responsive.css">
+  <link rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
 
   <style>
     body{ background:#f5f7fb; }
@@ -63,8 +65,12 @@
         </div>
 
         <div class="header-right d-flex gap-2">
-          <button class="btn btn-outline-secondary" id="btnReloadMenu">Actualizar menú</button>
-          <button class="btn btn-outline-secondary" id="btnLogout">Cerrar sesión</button>
+          <button class="btn btn-outline-secondary" id="btnReloadMenu">
+            <i class="fa-solid fa-rotate-right"></i>
+          </button>
+          <button class="btn btn-outline-secondary" id="btnLogout">
+            <i class="fa-solid fa-right-from-bracket"></i> Salir
+          </button>
         </div>
       </div>
 
@@ -82,12 +88,73 @@
   <script src="../js/api.js"></script>
   <script src="../js/menu.service.js"></script>
   <script src="../js/auth.js"></script>
+  <script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
 
   <script>
     requireAuthOrRedirect();
 
     const grid = document.getElementById("menuGrid");
     const emptyState = document.getElementById("emptyState");
+
+    //Bloque onesignal
+    window.OneSignalDeferred = window.OneSignalDeferred || [];
+
+    OneSignalDeferred.push(async function (OneSignal) {
+    
+      await OneSignal.init({
+        appId: "dc9072ed-f3d4-4fd3-8051-623f4f3a2a09",
+        notifyButton: { enable: false },
+        serviceWorkerParam: { scope: "../" },
+        serviceWorkerPath: "/OneSignalSDKWorker.js",
+        serviceWorkerUpdaterPath: "/OneSignalSDKUpdaterWorker.js",
+      });
+    
+      console.log("OneSignal init OK");
+    
+      // 1️⃣ Pedir permiso si aún no existe
+      console.log("Primero",OneSignal.Notifications.permission);
+      if (OneSignal.Notifications.permission !== true) {
+        await OneSignal.Notifications.requestPermission();
+      }
+      console.log("Segundo",OneSignal.Notifications.permission);
+    
+      if (OneSignal.Notifications.permission !== true) {
+        console.log("Usuario no permitió notificaciones");
+        return;
+      }
+    
+      // 2️⃣ Forzar suscripción
+      if (OneSignal.User?.PushSubscription?.optIn) {
+        await OneSignal.User.PushSubscription.optIn();
+      }
+    
+      // 3️⃣ Esperar que exista subscription REAL
+      let subId = null;
+      for (let i = 0; i < 20; i++) {
+        subId = OneSignal.User?.PushSubscription?.id ?? null;
+        if (subId) break;
+        await new Promise(r => setTimeout(r, 500));
+      }
+    
+      console.log("SubId:", subId);
+    
+      if (!subId) {
+        console.log("No hay SubId todavía");
+        return;
+      }
+    
+      // 4️⃣ AHORA sí vincular usuario
+      const idUsuario = localStorage.getItem("id_usuario");
+      if (!idUsuario) {
+        console.log("No hay id_usuario");
+        return;
+      }
+    
+      await OneSignal.login(String(idUsuario));
+      console.log("External ID vinculado:", idUsuario);
+    
+    });
+    //FIN bloque signal
 
     function iconEmoji(icon){
       // puedes cambiar a fontawesome luego; por ahora algo simple
@@ -117,7 +184,10 @@
         // Ajusta este mapping si tus páginas se llaman distinto.
         const pageMap = {
           "/tareas": "./Tareas/listarTareas.html",
-          "/recursos": "./Recursos/listarRecursos.html"
+          "/recursos": "./Recursos/listarRecursos.html",
+          "/usuarios": "./Seguridad/listarUsuarios.html",
+          "/roles": "./Seguridad/listarRoles.html",
+          "/reportes":"./Reportes/dashboard.html"
         };
 
         const href = pageMap[m.path] || "#";

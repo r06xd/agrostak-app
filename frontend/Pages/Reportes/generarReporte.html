@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Generar Reporte xml</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <link rel="stylesheet" href="../../css/bootstrap.min.css">
+  <link rel="stylesheet" href="../../css/style.css">
+  <link rel="stylesheet" href="../../css/responsive.css">
+
+  <style>
+    body{background:#f5f7fb;}
+    .page-center{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px 12px;}
+    .resource-card{width:100%;max-width:860px;border:0;border-radius:16px;box-shadow:0 18px 45px rgba(0,0,0,.12);overflow:hidden;background:#fff;}
+    .resource-card-header{padding:22px 24px;border-bottom:1px solid rgba(0,0,0,.06);display:flex;gap:16px;align-items:center;justify-content:space-between;flex-wrap:wrap;}
+    .header-left{display:flex;gap:16px;align-items:center;}
+    .resource-card-header img{width:130px;height:auto;display:block;}
+    .resource-card-header h4{margin:0;font-weight:700;letter-spacing:.2px;}
+    .resource-card-body{padding:22px 24px 24px;}
+    .form-label{font-weight:600;color:#343a40;margin-bottom:6px;}
+    .form-control,.form-select{min-height:44px;border-radius:10px;}
+    .btn{border-radius:10px;min-height:42px;padding:10px 16px;font-weight:600;}
+    .actions{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;padding-top:10px;}
+  </style>
+</head>
+
+<body class="main-layout">
+  <div class="page-center">
+    <div class="resource-card">
+
+      <div class="resource-card-header">
+        <div class="header-left">
+          <img src="../../images/logo.png" alt="Logo">
+          <div>
+            <h4>Generar Reporte</h4>
+            <small>Selecciona el tipo y rango de fechas</small>
+          </div>
+        </div>
+        <div class="d-flex gap-2">
+          <button class="btn btn-outline-secondary" id="btnVolver">Volver</button>
+        </div>
+      </div>
+
+      <div class="resource-card-body">
+        <div id="alertBox" class="alert d-none" role="alert"></div>
+
+        <form id="formGenerar">
+          <div class="row g-3">
+            <div class="col-md-6">
+              <label class="form-label" for="tipo">Tipo de reporte</label>
+              <select id="tipo" class="form-select" required>
+                <option value="" selected>Seleccione</option>
+                <option value="tareas">Tareas</option>
+                <option value="recursos">Recursos</option>
+                <option value="usuarios">Usuarios</option>
+              </select>
+            </div>
+
+            <div class="col-md-6">
+              <label class="form-label" for="formato">Formato</label>
+              <select id="formato" class="form-select" required>
+                <option value="pdf" selected>PDF</option>
+                <option value="xlsx">Excel (XLSX)</option>
+                <option value="csv">CSV</option>
+              </select>
+            </div>
+
+            <div class="col-md-6">
+              <label class="form-label" for="desde">Desde</label>
+              <input id="desde" type="date" class="form-control" required>
+            </div>
+
+            <div class="col-md-6">
+              <label class="form-label" for="hasta">Hasta</label>
+              <input id="hasta" type="date" class="form-control" required>
+            </div>
+
+            <div class="col-md-12">
+              <label class="form-label" for="nombre">Nombre (opcional)</label>
+              <input id="nombre" class="form-control" maxlength="120" placeholder="Ej: Reporte de tareas semanal">
+            </div>
+          </div>
+
+          <div class="actions">
+            <button type="reset" class="btn btn-outline-secondary">Limpiar</button>
+            <button type="submit" class="btn btn-primary" id="btnGenerar">Generar</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <script src="../../js/jquery.min.js"></script>
+  <script src="../../js/bootstrap.bundle.min.js"></script>
+
+  <script src="../../js/config.js"></script>
+  <script src="../../js/api.js"></script>
+  <script src="../../js/menu.service.js"></script>
+  <script src="../../js/auth.js"></script>
+  <script src="../../js/reportes.service.js"></script>
+
+  <script>
+    requireAuthOrRedirect();
+
+    const alertBox = document.getElementById("alertBox");
+    const btn = document.getElementById("btnGenerar");
+
+    const tipo = document.getElementById("tipo");
+    const formato = document.getElementById("formato");
+    const desde = document.getElementById("desde");
+    const hasta = document.getElementById("hasta");
+    const nombre = document.getElementById("nombre");
+
+    function showAlert(msg, type="danger"){
+      alertBox.className = `alert alert-${type}`;
+      alertBox.textContent = msg;
+      alertBox.classList.remove("d-none");
+    }
+    function hideAlert(){ alertBox.classList.add("d-none"); alertBox.textContent=""; }
+    function setLoading(v){ btn.disabled=v; btn.textContent=v?"Generando...":"Generar"; }
+
+    document.getElementById("btnVolver").addEventListener("click", () => window.location.href = "./listarReportes.html");
+
+    document.getElementById("formGenerar").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      hideAlert();
+      setLoading(true);
+
+      try{
+        const payload = {
+          tipo: tipo.value,
+          formato: formato.value,
+          desde: desde.value,
+          hasta: hasta.value,
+          nombre: (nombre.value || "").trim() || null
+        };
+
+        const resp = await reportesGenerar(payload);
+
+        // Si el backend devuelve id o url, redirigimos al detalle
+        const id = resp?.id_reporte ?? resp?.id ?? resp?.data?.id;
+        const url = resp?.url_descarga ?? resp?.url ?? resp?.download_url;
+
+        if(id) window.location.href = "./verReporte.html?id=" + encodeURIComponent(id);
+        else if(url) window.open(url, "_blank");
+        else {
+          showAlert("Reporte generado ✅ (sin id/url en respuesta)", "success");
+          setTimeout(() => window.location.href = "./listarReportes.html", 700);
+        }
+
+      }catch(err){
+        showAlert(err.message || "No se pudo generar el reporte");
+      }finally{
+        setLoading(false);
+      }
+    });
+  </script>
+</body>
+</html>

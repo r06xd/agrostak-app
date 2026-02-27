@@ -78,15 +78,13 @@ CREATE TABLE asignaciones_tarea (
 -- 6. Tabla HISTORIAL_ESTADOS_TAREA
 CREATE TABLE historial_estados_tarea (
     id_historial INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-    id_tarea INT UNSIGNED NOT NULL,
+    id_tarea INT NULL,
     estado_anterior ENUM('pendiente','en_progreso','completada','cancelada'),
     estado_nuevo ENUM('pendiente','en_progreso','completada','cancelada')
         NOT NULL,
     fecha_cambio DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     id_usuario INT UNSIGNED NOT NULL,
     comentario VARCHAR(255),
-    CONSTRAINT fk_historial_tarea
-        FOREIGN KEY (id_tarea) REFERENCES tareas(id_tarea),
     CONSTRAINT fk_historial_usuario
         FOREIGN KEY (id_usuario) REFERENCES usuarios(id_usuario)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
