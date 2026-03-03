@@ -7,9 +7,11 @@ from app.tasks.domain.enums import PrioridadTarea, EstadoTarea
 class TareaCreate(BaseModel):
     id_tarea_padre: Optional[int] = None
     titulo: str = Field(..., min_length=3, max_length=150)
-    descripcion: str = Field(..., min_length=3)
+    descripcion: Optional[str] = Field(None, min_length=0)
+    estado: Optional[EstadoTarea] = None
     fecha_inicio_prog: Optional[datetime] = None
     fecha_fin_prog: Optional[datetime] = None
+    fecha_fin_real: Optional[datetime] = None
     prioridad: PrioridadTarea = PrioridadTarea.media
     es_recurrente: bool = False
 

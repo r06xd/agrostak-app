@@ -93,6 +93,17 @@
               <option value="media">Media</option>
               <option value="alta">Alta</option>
             </select>
+
+            Fecha Inicio:<input id="filtroFechaInicio" type="date" class="form-control" style="max-width:190px;">
+            Fecha Fin:<input id="filtroFechaFin" type="date" class="form-control" style="max-width:190px;">
+            
+            <div class="form-check d-flex align-items-center ms-2">
+              <input class="form-check-input me-2" type="checkbox" id="incluirSinFecha">
+              <label class="form-check-label" for="incluirSinFecha">
+                Sin fecha
+              </label>
+            </div>
+
           </div>
 
           <div class="right">
@@ -110,6 +121,7 @@
                 <th>Prioridad</th>
                 <th>Estado</th>
                 <th>Responsable</th>
+                <th>Fecha Limite</th>
                 <th class="actions-col text-end">Acciones</th>
               </tr>
             </thead>
@@ -142,6 +154,9 @@
     const busqueda = document.getElementById("busqueda");
     const filtroEstado = document.getElementById("filtroEstado");
     const filtroPrioridad = document.getElementById("filtroPrioridad");
+    const filtroFechaInicio = document.getElementById("filtroFechaInicio");
+    const filtroFechaFin = document.getElementById("filtroFechaFin");
+    const incluirSinFecha = document.getElementById("incluirSinFecha");
 
     let tareas = [];
 
@@ -157,6 +172,7 @@
           <td>${badge(t.prioridad ?? "-")}</td>
           <td>${badge(t.estado ?? "-")}</td>
           <td>${safe(t.asignado_a ?? "-")}</td>
+          <td>${safe(formatDate(t.fecha_fin_real) ?? "-")}</td>
           <td class="text-end">
             <button class="btn btn-sm btn-outline-primary me-1" data-action="editar" data-id="${t.id_tarea ?? t.id ?? t.idTarea}">
               <i class="fa-solid fa-pen-to-square"></i>
@@ -188,7 +204,28 @@
         const okEst = !est || n(t.estado) === est;
         const okPri = !pri || n(t.prioridad) === pri;
 
-        return okQ && okEst && okPri;
+        const ini = toDateOnly(filtroFechaInicio.value);
+        const fin = toDateOnly(filtroFechaFin.value);
+        const incluirVacias = incluirSinFecha.checked;
+
+        const fTarea = getFechaLimite(t);
+
+        // 🔥 Lógica mejorada
+        const filtroFechasActivo = !!(ini || fin);
+
+        let okFecha = true;
+
+        if(filtroFechasActivo){
+          if(!fTarea){
+            okFecha = incluirVacias; // si no tiene fecha, depende del check
+          } else {
+            const okIni = !ini || fTarea >= ini;
+            const okFin = !fin || fTarea <= fin;
+            okFecha = okIni && okFin;
+          }
+        }
+
+        return okQ && okEst && okPri && okFecha;
       });
 
       render(filtered);
@@ -219,12 +256,19 @@
       busqueda.value = "";
       filtroEstado.value = "";
       filtroPrioridad.value = "";
+      filtroFechaInicio.value = "";
+      filtroFechaFin.value = "";
+      incluirSinFecha.checked = false;
       aplicarFiltros();
     });
 
     busqueda.addEventListener("input", aplicarFiltros);
     filtroEstado.addEventListener("change", aplicarFiltros);
     filtroPrioridad.addEventListener("change", aplicarFiltros);
+    filtroFechaInicio.addEventListener("change", aplicarFiltros);
+    filtroFechaFin.addEventListener("change", aplicarFiltros);
+    incluirSinFecha.addEventListener("change", aplicarFiltros);
+    
 
     document.getElementById("tablaTareas").addEventListener("click", async (ev) => {
       const btn = ev.target.closest("button[data-action]");
@@ -252,6 +296,33 @@
       }
       if(action === "asignar"){window.location.href = "./asignarTarea.html?tarea=" + encodeURIComponent(id);}
     });
+
+    function formatDate(fecha) {
+      if (!fecha) return "-";
+      const date = new Date(fecha);
+
+      const day = String(date.getDate()).padStart(2, '0');
+      const month = String(date.getMonth() + 1).padStart(2, '0');
+      const year = date.getFullYear();
+
+      return `${day}-${month}-${year}`;
+    }
+
+    function toDateOnly(value){
+      if(!value) return null;
+
+      // acepta "YYYY-MM-DD" o "YYYY-MM-DDTHH:mm:ss..."
+      const s = String(value).slice(0,10);
+      const [y,m,d] = s.split("-").map(Number);
+      if(!y || !m || !d) return null;
+
+      // Date local (evita desfases por zona horaria)
+      return new Date(y, m - 1, d);
+    }
+
+    function getFechaLimite(t){
+      return toDateOnly(t.fecha_fin_real);
+    }
 
     cargar();
   </script>

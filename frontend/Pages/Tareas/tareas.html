@@ -155,7 +155,7 @@
         estado.value = t.estado ?? "pendiente";
 
         // soporta "YYYY-MM-DD"
-        const f = t.fecha_limite ?? t.fechaLimite ?? t.due_date ?? "";
+        const f = t.fecha_fin_real ?? t.fecha_fin_real ?? t.due_date ?? "";
         fechaLimite.value = (f || "").slice(0,10);
       }catch(err){
         showAlert(err.message || "No se pudo cargar la tarea");
@@ -170,11 +170,14 @@
       // Payload estándar (ajusta nombres si tu backend usa otros)
       const payload = {
         titulo: titulo.value.trim(),
-        descripcion: (descripcion.value || "").trim() || null,
+        descripcion: (descripcion?.value || "").trim() || " ",
         prioridad: prioridad.value,
         estado: estado.value,
-        fecha_limite: fechaLimite.value || null
+        fecha_fin_real: fechaLimite.value || null,
+        fecha_fin_prog: fechaLimite.value || null
       };
+
+      console.log(payload);
 
       try{
         if(id){

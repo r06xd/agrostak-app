@@ -177,6 +177,11 @@
               <option value="mantenimiento">Mantenimiento</option>
               <option value="inactivo">Inactivo</option>
             </select>
+            <select id="filtroBodegas" class="form-select" style="max-width: 240px;">
+              <option value="">Bodega: Todos</option>
+              <option value="bodega1">Bodega 1</option>
+              <option value="bodega2">Bodega 2</option>
+            </select>
           </div>
 
           <div class="right">
@@ -228,6 +233,7 @@
   const busqueda = document.getElementById("busqueda");
   const filtroTipo = document.getElementById("filtroTipo");
   const filtroEstado = document.getElementById("filtroEstado");
+  const filtroBodegas = document.getElementById("filtroBodegas");
 
   let recursos = [];
 
@@ -259,13 +265,15 @@
     const q = n(busqueda.value);
     const t = n(filtroTipo.value);
     const e = n(filtroEstado.value);
+    const b = n(filtroBodegas.value);
 
     const filtered = recursos.filter(r => {
       const texto = n(`${r.nombre} ${r.descripcion} ${r.ubicacion}`);
       const okQ = !q || texto.includes(q);
       const okT = !t || n(r.tipo) === t;
       const okE = !e || n(r.estado) === e;
-      return okQ && okT && okE;
+      const okB = !b || n(r.ubicacion) === b;
+      return okQ && okT && okE && okB;
     });
 
     render(filtered);
@@ -300,6 +308,7 @@
   busqueda.addEventListener("input", aplicarFiltros);
   filtroTipo.addEventListener("change", aplicarFiltros);
   filtroEstado.addEventListener("change", aplicarFiltros);
+  filtroBodegas.addEventListener("change", aplicarFiltros);
 
   document.getElementById("tablaRecursos").addEventListener("click", async (ev) => {
     const btn = ev.target.closest("button[data-action]");

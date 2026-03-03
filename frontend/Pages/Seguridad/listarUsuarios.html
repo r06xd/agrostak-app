@@ -84,7 +84,6 @@
             <thead class="table-light">
               <tr>
                 <th>Correo</th>
-                <th>Usuario</th>
                 <th>Nombre</th>
                 <th>Rol</th>
                 <th>Estado</th>
@@ -136,7 +135,6 @@
       tbody.innerHTML = rows.map(u => `
         <tr>
           <td class="fw-semibold">${safe(u.correo ?? u.email)}</td>
-          <td>${safe(u.usuario ?? u.username ?? "-")}</td>
           <td>${safe(u.nombre ?? u.full_name ?? u.nombres ?? "-")}</td>
           <td>${badge(rolLabel(u.id_rol ?? u.rol ?? u.role ?? u.idRol))}</td>
           <td>${badge(u.estado ?? u.status ?? "-")}</td>

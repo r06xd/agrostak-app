@@ -14,7 +14,7 @@ class TareaORM(Base):
     id_creador = Column(Integer, ForeignKey("usuarios.id_usuario"), nullable=False)
 
     titulo = Column(String(150), nullable=False)
-    descripcion = Column(Text, nullable=False)
+    descripcion = Column(String(255), nullable=True)
 
     fecha_creacion = Column(DateTime, nullable=False, server_default=func.now())
     fecha_inicio_prog = Column(DateTime, nullable=True)

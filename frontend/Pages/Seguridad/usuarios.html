@@ -51,13 +51,13 @@
           <div class="row g-3">
             <div class="col-md-6">
               <label class="form-label" for="correo">Correo</label>
-              <input id="correo" type="email" class="form-control" required placeholder="correo@ejemplo.com">
+              <input id="correo" type="email" class="form-control" required placeholder="correo@dominio.com">
             </div>
 
-            <div class="col-md-6">
+            <!-- <div class="col-md-6">
               <label class="form-label" for="usuario">Usuario</label>
               <input id="usuario" class="form-control" maxlength="60" placeholder="Ej: admin">
-            </div>
+            </div> -->
 
             <div class="col-md-6">
               <label class="form-label" for="nombre">Nombre</label>
@@ -128,7 +128,7 @@
     const subTitle = document.getElementById("subTitle");
 
     const correo = document.getElementById("correo");
-    const usuario = document.getElementById("usuario");
+    // const usuario = document.getElementById("usuario");
     const nombre = document.getElementById("nombre");
     const id_rol = document.getElementById("id_rol");
     const estado = document.getElementById("estado");
@@ -177,7 +177,7 @@
       const u = data?.data || data;
 
       correo.value = u.correo ?? u.email ?? "";
-      usuario.value = u.usuario ?? u.username ?? "";
+      // usuario.value = u.usuario ?? u.usuario ?? "";
       nombre.value = u.nombre ?? u.full_name ?? u.nombres ?? "";
       id_rol.value = u.id_rol ?? u.rol ?? u.role ?? u.idRol ?? "";
       estado.value = u.estado ?? u.status ?? "activo";
@@ -194,7 +194,7 @@
         nombres: (nombre.value || "").trim() || null,
         apellidos: "",
         correo: correo.value.trim(),
-        usuario: (usuario.value || "").trim() || null,
+        usuario: null, //(usuario.value || "").trim() || null,
         estado: estado.value,
         password: (password.value || "").trim(),
         area_trabajo:""
