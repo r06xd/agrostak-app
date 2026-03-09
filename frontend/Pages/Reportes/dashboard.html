@@ -54,6 +54,8 @@
         <div class="d-flex gap-2">
           <button class="btn btn-outline-secondary" id="btnVolver">Volver</button>
           <button class="btn btn-outline-secondary" id="btnRefrescar">Refrescar</button>
+          <button class="btn btn-outline-success" id="btnCsv">Descargar CSV</button>
+          <button class="btn btn-success" id="btnExcel">Descargar Excel</button>
         </div>
       </div>
 
@@ -212,6 +214,24 @@
     document.getElementById("btnVolver").addEventListener("click", () => {
       // Ajusta si tu bienvenida está en otro path
       window.location.href = "../bienvenida_dos.html";
+    });
+
+    document.getElementById("btnCsv").addEventListener("click", async () => {
+      try {
+        hideAlert();
+        await dashboardDownloadCsv();
+      } catch (err) {
+        showAlert(err.message || "No se pudo descargar el CSV");
+      }
+    });
+
+    document.getElementById("btnExcel").addEventListener("click", async () => {
+      try {
+        hideAlert();
+        await dashboardDownloadExcel();
+      } catch (err) {
+        showAlert(err.message || "No se pudo descargar el Excel");
+      }
     });
 
     cargar();

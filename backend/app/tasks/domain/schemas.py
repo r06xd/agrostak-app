@@ -33,6 +33,7 @@ class TareaListOut(BaseModel):
     estado: str
     prioridad: str
     porcentaje_avance: int
+    descripcion: str
 
     # los que te faltan: ponlos opcionales o inclúyelos
     fecha_creacion: Optional[datetime] = None

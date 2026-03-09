@@ -36,5 +36,5 @@ function requireAuthOrRedirect() {
 
 function logout() {
   clearToken();
-  window.location.href = "../../index.html";
+  window.location.href = "../index.html";
 }

@@ -12,3 +12,4 @@ pydantic-settings
 passlib[bcrypt]==1.7.4
 bcrypt==3.2.2
 requests==2.32.3
+openpyxl==3.1.5

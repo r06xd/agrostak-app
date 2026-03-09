@@ -65,7 +65,6 @@ def update_user(db: Session, id_usuario: int, data: UsuarioUpdate) -> UsuarioRea
     for field in ["id_rol", "nombres", "apellidos", "area_trabajo", "foto_url", "estado"]:
         if field in payload and field != "password":
             setattr(user, field, payload[field])
-
     updated = repo.update_user(user)
     return UsuarioRead.model_validate(updated)
 

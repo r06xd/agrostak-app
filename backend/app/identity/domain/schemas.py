@@ -23,10 +23,10 @@ class UsuarioCreate(BaseModel):
 
 class UsuarioUpdate(BaseModel):
     id_rol: Optional[int] = Field(None, gt=0)
-    nombres: Optional[str] = Field(None, min_length=2, max_length=100)
-    apellidos: Optional[str] = Field(None, min_length=2, max_length=100)
+    nombres: Optional[str] = Field(None, max_length=100)
+    apellidos: Optional[str] = Field(None, max_length=100)
     correo: Optional[EmailStr] = None
-    password: Optional[str] = Field(None, min_length=8, max_length=64)
+    password: Optional[str] = Field(None, max_length=64)
     area_trabajo: Optional[str] = Field(None, max_length=100)
     foto_url: Optional[str] = Field(None, max_length=255)
     estado: Optional[Literal["activo", "inactivo"]] = None

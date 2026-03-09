@@ -72,7 +72,8 @@ def listar_tareas(db: Session) -> list[TareaRead]:
             "prioridad": tarea.prioridad,
             "porcentaje_avance": tarea.porcentaje_avance,
             "asignado_a": asignado,
-            "fecha_fin_real": tarea.fecha_fin_real
+            "fecha_fin_real": tarea.fecha_fin_real,
+            "descripcion": tarea.descripcion
         })
 
     return resultado

@@ -194,7 +194,7 @@
         nombres: (nombre.value || "").trim() || null,
         apellidos: "",
         correo: correo.value.trim(),
-        usuario: null, //(usuario.value || "").trim() || null,
+        usuario: "", //(usuario.value || "").trim() || null,
         estado: estado.value,
         password: (password.value || "").trim(),
         area_trabajo:""
@@ -203,6 +203,10 @@
       // Solo envía password si está lleno
       const pass = (password.value || "").trim();
       if(pass) payload.password = pass;
+
+      if(password.value.length === 0){
+        delete payload.password;
+      }
 
       try{
         if(id) await usuariosUpdate(id, payload);

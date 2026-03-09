@@ -17,12 +17,11 @@ router = APIRouter(prefix="/tareas", tags=["tareas"])
 
 @router.get("/", response_model=list[TareaListOut])
 def list_tareas(db: Session = Depends(get_session), user=Depends(get_current_user)):
-    print('Entra a buscar tareas')
     if user.id_rol == 1:
         return services.listar_tareas(db)
     else:
         print('Entra a buscar por usuario', user.id_usuario)
-        services.mis_tareas(db, id_usuario=user.id_usuario)
+        return services.mis_tareas(db, id_usuario=user.id_usuario)
 
 
 @router.post("/", response_model=TareaRead, status_code=status.HTTP_201_CREATED)
