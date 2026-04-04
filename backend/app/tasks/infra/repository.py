@@ -90,7 +90,21 @@ class TasksRepository:
         return comentario
 
     def list_comentarios(self, id_tarea: int) -> List[ComentarioTareaORM]:
-        return self.db.query(ComentarioTareaORM).filter(ComentarioTareaORM.id_tarea == id_tarea).all()
+        return (
+            self.db.query(
+                ComentarioTareaORM.id_comentario,
+                ComentarioTareaORM.id_tarea,
+                ComentarioTareaORM.id_usuario,
+                ComentarioTareaORM.texto,
+                ComentarioTareaORM.fecha,
+                UsuarioORM.nombres,
+                UsuarioORM.apellidos,
+            )
+            .join(UsuarioORM, UsuarioORM.id_usuario == ComentarioTareaORM.id_usuario)
+            .filter(ComentarioTareaORM.id_tarea == id_tarea)
+            .order_by(ComentarioTareaORM.fecha.asc())
+            .all()
+        )
 
     def list_historial(self, id_tarea: int):
         return (

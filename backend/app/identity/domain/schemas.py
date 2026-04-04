@@ -18,7 +18,7 @@ class UsuarioCreate(BaseModel):
     correo: EmailStr
     password: str = Field(..., min_length=8, max_length=64)
     area_trabajo: Optional[str] = Field(None, max_length=100)
-    foto_url: Optional[str] = Field(None, max_length=255)
+    foto_url: Optional[str] = Field(None)
 
 
 class UsuarioUpdate(BaseModel):
@@ -28,8 +28,8 @@ class UsuarioUpdate(BaseModel):
     correo: Optional[EmailStr] = None
     password: Optional[str] = Field(None, max_length=64)
     area_trabajo: Optional[str] = Field(None, max_length=100)
-    foto_url: Optional[str] = Field(None, max_length=255)
     estado: Optional[Literal["activo", "inactivo"]] = None
+    foto_url: Optional[str] = Field(None)
 
 
 class UsuarioRead(BaseModel):

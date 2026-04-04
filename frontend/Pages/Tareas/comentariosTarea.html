@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Comentarios de Tarea</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <link rel="stylesheet" href="../../css/bootstrap.min.css">
+  <link rel="stylesheet" href="../../css/style.css">
+  <link rel="stylesheet" href="../../css/responsive.css">
+  <link rel="stylesheet"
+        href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+
+  <style>
+    body{ background:#f5f7fb; }
+    .page-center{
+      min-height:100vh;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      padding:24px 12px;
+    }
+    .resource-card{
+      width:100%;
+      max-width:980px;
+      border:0;
+      border-radius:16px;
+      box-shadow:0 18px 45px rgba(0,0,0,.12);
+      overflow:hidden;
+      background:#fff;
+    }
+    .resource-card-header{
+      padding:22px 24px;
+      border-bottom:1px solid rgba(0,0,0,.06);
+      display:flex;
+      gap:16px;
+      align-items:center;
+      justify-content:space-between;
+      flex-wrap:wrap;
+    }
+    .header-left{
+      display:flex;
+      gap:16px;
+      align-items:center;
+    }
+    .resource-card-header img{
+      width:130px;
+      height:auto;
+      display:block;
+    }
+    .resource-card-body{
+      padding:22px 24px 24px;
+    }
+    .info-box{
+      background:#f8fafc;
+      border:1px solid rgba(0,0,0,.08);
+      border-radius:12px;
+      padding:14px;
+      margin-bottom:18px;
+    }
+    .comment-box{
+      border:1px solid rgba(0,0,0,.08);
+      border-radius:12px;
+      padding:14px;
+      background:#fff;
+      margin-bottom:12px;
+    }
+    .comment-meta{
+      display:flex;
+      justify-content:space-between;
+      gap:10px;
+      flex-wrap:wrap;
+      margin-bottom:8px;
+      font-size:.92rem;
+      color:#6c757d;
+    }
+    .comment-text{
+      white-space:pre-wrap;
+    }
+    #formNuevoComentario{ display:none; }
+  </style>
+</head>
+<body class="main-layout">
+  <div class="page-center">
+    <div class="resource-card">
+      <div class="resource-card-header">
+        <div class="header-left">
+          <img src="../../images/logo.png" alt="Logo">
+          <div>
+            <h4 class="m-0">Comentarios de la tarea</h4>
+            <small class="text-muted">Consulta y agrega comentarios relacionados a esta tarea</small>
+          </div>
+        </div>
+        <button class="btn btn-outline-secondary" id="btnVolver">
+          <i class="fa-solid fa-arrow-left"></i> Volver
+        </button>
+      </div>
+
+      <div class="resource-card-body">
+        <div id="alertBox" class="alert d-none" role="alert"></div>
+
+        <div class="info-box mb-3">
+          <div class="fw-semibold" id="taskTitle">Tarea: <span class="text-muted">—</span></div>
+          <div class="text-muted" id="taskDesc">Descripción: —</div>
+        </div>
+
+        <div class="d-flex gap-2 mb-3 flex-wrap">
+          <button class="btn btn-primary" id="btnMostrarFormulario">
+            <i class="fa-solid fa-plus"></i> Agregar comentario
+          </button>
+        </div>
+
+        <form id="formNuevoComentario" class="mb-4">
+          <div class="mb-3">
+            <label class="form-label" for="textoComentario">Comentario</label>
+            <textarea id="textoComentario" class="form-control" rows="4" maxlength="255"
+                      placeholder="Escribe tu comentario..." required></textarea>
+            <div class="text-muted mt-1">Máximo 255 caracteres.</div>
+          </div>
+
+          <div class="d-flex gap-2">
+            <button type="submit" class="btn btn-success" id="btnGuardarComentario">
+              Guardar comentario
+            </button>
+            <button type="button" class="btn btn-outline-secondary" id="btnCancelarComentario">
+              Cancelar
+            </button>
+          </div>
+        </form>
+
+        <div>
+          <h6 class="fw-bold mb-3">Listado de comentarios</h6>
+          <div id="comentariosContainer">
+            <div class="text-muted">No hay comentarios para esta tarea.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="../../js/jquery.min.js"></script>
+  <script src="../../js/bootstrap.bundle.min.js"></script>
+  <script src="../../js/config.js"></script>
+  <script src="../../js/api.js"></script>
+  <script src="../../js/menu.service.js"></script>
+  <script src="../../js/auth.js"></script>
+  <script src="../../js/tareas.service.js"></script>
+
+  <script>
+    requireAuthOrRedirect();
+
+    const params = new URLSearchParams(window.location.search);
+    const id_tarea = params.get("tarea");
+
+    const alertBox = document.getElementById("alertBox");
+    const taskTitle = document.getElementById("taskTitle");
+    const taskDesc = document.getElementById("taskDesc");
+    const comentariosContainer = document.getElementById("comentariosContainer");
+    const formNuevoComentario = document.getElementById("formNuevoComentario");
+    const textoComentario = document.getElementById("textoComentario");
+    const btnGuardarComentario = document.getElementById("btnGuardarComentario");
+
+    function showAlert(msg, type = "danger"){
+      alertBox.className = `alert alert-${type}`;
+      alertBox.textContent = msg;
+      alertBox.classList.remove("d-none");
+    }
+
+    function hideAlert(){
+      alertBox.classList.add("d-none");
+      alertBox.textContent = "";
+    }
+
+    function formatFecha(fecha){
+      if(!fecha) return "—";
+      const d = new Date(fecha);
+      return d.toLocaleString("es-EC");
+    }
+
+    async function cargarTarea(){
+      const data = await tareasGetById(id_tarea);
+      const t = data?.data || data;
+      const titulo = t.titulo ?? t.nombre ?? ("Tarea #" + (t.id_tarea ?? t.id));
+      const desc = t.descripcion ?? "";
+
+      taskTitle.innerHTML = `Tarea: <span class="text-muted">${titulo}</span>`;
+      taskDesc.textContent = `Descripción: ${desc || "—"}`;
+    }
+
+    async function cargarComentarios(){
+      const data = await tareasListComments(id_tarea);
+      const comentarios = Array.isArray(data) ? data : (data?.data || []);
+
+      if(!comentarios.length){
+        comentariosContainer.innerHTML = `<div class="text-muted">No hay comentarios para esta tarea.</div>`;
+        return;
+      }
+
+      comentariosContainer.innerHTML = comentarios.map(c => `
+        <div class="comment-box">
+          <div class="comment-meta">
+            <span><strong>${c.nombre_usuario || ("Usuario #" + c.id_usuario)}</strong></span>
+            <span>${formatFecha(c.fecha_creacion)}</span>
+          </div>
+          <div class="comment-text">${c.texto}</div>
+        </div>
+      `).join("");
+    }
+
+    document.getElementById("btnVolver").addEventListener("click", () => {
+      window.location.href = "./listarTareas.html";
+    });
+
+    document.getElementById("btnMostrarFormulario").addEventListener("click", () => {
+      formNuevoComentario.style.display = "block";
+      textoComentario.focus();
+    });
+
+    document.getElementById("btnCancelarComentario").addEventListener("click", () => {
+      formNuevoComentario.style.display = "none";
+      textoComentario.value = "";
+      hideAlert();
+    });
+
+    formNuevoComentario.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      hideAlert();
+
+      const texto = textoComentario.value.trim();
+      if(!texto){
+        showAlert("Debes escribir un comentario.");
+        return;
+      }
+
+      btnGuardarComentario.disabled = true;
+      btnGuardarComentario.textContent = "Guardando...";
+
+      try{
+        await tareasAddComment(id_tarea, { texto });
+        textoComentario.value = "";
+        formNuevoComentario.style.display = "none";
+        showAlert("Comentario agregado correctamente ✅", "success");
+        await cargarComentarios();
+      }catch(err){
+        showAlert(err.message || "No se pudo agregar el comentario.");
+      }finally{
+        btnGuardarComentario.disabled = false;
+        btnGuardarComentario.textContent = "Guardar comentario";
+      }
+    });
+
+    (async () => {
+      try{
+        await cargarTarea();
+        await cargarComentarios();
+      }catch(err){
+        showAlert(err.message || "No se pudo cargar la pantalla.");
+      }
+    })();
+  </script>
+</body>
+</html>

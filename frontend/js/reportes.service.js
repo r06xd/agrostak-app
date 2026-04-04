@@ -22,8 +22,9 @@ async function reportesGenerar(payload){
   return apiRequest(epGenerar(), { method: "POST", body: payload, auth: true });
 }
 
-async function dashboardSummaryGet(){
-  return apiRequest(epDashboardSummary(), { method: "GET", auth: true });
+async function dashboardSummaryGet(params){
+  console.log(params);
+  return apiRequest(`${epDashboardSummary()}?${params}`, { method: "GET", auth: true });
 }
 
 async function downloadFile(path, filename) {
@@ -57,10 +58,10 @@ async function downloadFile(path, filename) {
   window.URL.revokeObjectURL(blobUrl);
 }
 
-async function dashboardDownloadCsv() {
-  return downloadFile(`${epReportes()}/dashboard/csv`, "dashboard_report.csv");
+async function dashboardDownloadCsv(params) {
+  return downloadFile(`${epReportes()}/dashboard/csv?${params}`, "dashboard_report.csv");
 }
 
-async function dashboardDownloadExcel() {
-  return downloadFile(`${epReportes()}/dashboard/excel`, "dashboard_report.xlsx");
+async function dashboardDownloadExcel(params) {
+  return downloadFile(`${epReportes()}/dashboard/excel?${params}`, "dashboard_report.xlsx");
 }

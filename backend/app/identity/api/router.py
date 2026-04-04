@@ -65,3 +65,7 @@ def my_menu(db=Depends(get_session), user=Depends(get_current_user)):
 @router.get("/roles", response_model=list[RolRead])
 def listar_roles(db=Depends(get_session), user=Depends(get_current_user)):
     return services.listar_roles(db)
+
+@router.get("/usuarioAdmin", response_model=list[RolRead])
+def listar_roles(db=Depends(get_session)):
+    return services.obtener_usuario_admin(db)

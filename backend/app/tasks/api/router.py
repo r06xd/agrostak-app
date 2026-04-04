@@ -38,7 +38,6 @@ def get_tarea(id_tarea: int, db: Session = Depends(get_session), _=Depends(get_c
 def update_tarea(id_tarea: int, data: TareaUpdate, db: Session = Depends(get_session), user=Depends(get_current_user)):
     return services.actualizar_tarea(db, id_tarea, data, id_usuario=user.id_usuario)
 
-
 @router.delete("/{id_tarea}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_tarea(id_tarea: int, db: Session = Depends(get_session), _=Depends(get_current_user)):
     services.eliminar_tarea(db, id_tarea)

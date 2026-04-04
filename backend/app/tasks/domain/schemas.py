@@ -1,4 +1,4 @@
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, ConfigDict
 from typing import Optional, List
 from datetime import datetime
 from app.tasks.domain.enums import PrioridadTarea, EstadoTarea
@@ -108,3 +108,17 @@ class HistorialRead(BaseModel):
 class CambiarEstadoRequest(BaseModel):
     estado: EstadoTarea
     comentario: str | None = Field(default=None, max_length=255)
+
+
+class ComentarioCreate(BaseModel):
+    texto: str = Field(..., min_length=1, max_length=255)
+
+class ComentarioRead(BaseModel):
+    id_comentario: int
+    id_tarea: int
+    id_usuario: int
+    texto: str
+    fecha_creacion: datetime
+    nombre_usuario: Optional[str] = None
+
+    model_config = ConfigDict(from_attributes=True)

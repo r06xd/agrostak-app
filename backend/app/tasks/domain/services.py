@@ -187,6 +187,7 @@ def listar_asignaciones(db: Session, id_tarea: int) -> list[AsignacionRead]:
 def agregar_comentario(db: Session, id_tarea: int, data: ComentarioCreate, id_usuario: int) -> ComentarioRead:
     repo = TasksRepository(db)
     tarea = repo.get_tarea(id_tarea)
+
     if not tarea:
         raise HTTPException(status_code=404, detail="Tarea no encontrada.")
 
@@ -196,15 +197,44 @@ def agregar_comentario(db: Session, id_tarea: int, data: ComentarioCreate, id_us
         texto=data.texto.strip()
     )
     created = repo.add_comentario(comentario)
-    return ComentarioRead.model_validate(created)
+
+    nombre_usuario = None
+    if hasattr(created, "usuario") and created.usuario:
+        nombre_usuario = f"{created.usuario.nombres} {created.usuario.apellidos or ''}".strip()
+
+    return ComentarioRead(
+        id_comentario=created.id_comentario,
+        id_tarea=created.id_tarea,
+        id_usuario=created.id_usuario,
+        texto=created.texto,
+        fecha_creacion=created.fecha,
+        nombre_usuario=nombre_usuario
+    )
 
 
 def listar_comentarios(db: Session, id_tarea: int) -> list[ComentarioRead]:
     repo = TasksRepository(db)
     tarea = repo.get_tarea(id_tarea)
+
     if not tarea:
         raise HTTPException(status_code=404, detail="Tarea no encontrada.")
-    return [ComentarioRead.model_validate(c) for c in repo.list_comentarios(id_tarea)]
+
+    rows = repo.list_comentarios(id_tarea)
+
+    resultado = []
+    for row in rows:
+        nombre_usuario = f"{row.nombres} {row.apellidos or ''}".strip()
+        resultado.append(
+            ComentarioRead(
+                id_comentario=row.id_comentario,
+                id_tarea=row.id_tarea,
+                id_usuario=row.id_usuario,
+                texto=row.texto,
+                fecha_creacion=row.fecha,
+                nombre_usuario=nombre_usuario
+            )
+        )
+    return resultado
 
 def obtener_historial(db: Session, id_tarea: int) -> list[HistorialRead]:
     repo = TasksRepository(db)

@@ -153,6 +153,9 @@
           <button type="button" class="btn btn-primary" id="btnHome">
             <i class="fa-solid fa-house"></i>
           </button>
+          <button type="button" class="btn btn-primary" id="btnRefrescar">
+            <i class="fa-solid fa-rotate-right"></i>
+          </button>
           <button type="button" class="btn btn-primary" id="btnCrear">
             <i class="fa-solid fa-plus"></i>
           </button>
@@ -240,7 +243,11 @@
   function n(v){ return (v ?? "").toString().toLowerCase().trim(); }
   function safe(v){ return (v ?? "").toString(); }
 
-  function render(rows){
+  const menuTecnico = `style="display: none;"`
+
+  async function render(rows){
+    const user = await getCurrentUser();
+
     tbody.innerHTML = rows.map(r => `
       <tr>
         <td class="fw-semibold">${safe(r.nombre)}</td>
@@ -249,7 +256,7 @@
         <td>${Math.round(r.cantidad_disponible ?? 0)}</td>
         <td>${safe(r.ubicacion)}</td>
         <td>${safe(r.estado)}</td>
-        <td class="text-end">
+        <td class="text-end" ${user.id_rol !== 4 ? "" : menuTecnico}>
           <button class="btn btn-sm btn-outline-primary" data-action="editar" data-id="${r.id_recurso}">
           <i class="fa-solid fa-pen-to-square"></i>
           </button>
@@ -257,6 +264,19 @@
           <i class="fa-solid fa-trash"></i>
           </button>
         </td>
+
+        <td class="text-end contenedor-btn-tecnico" ${user.id_rol === 4 ? "" : menuTecnico}>
+            <button class="btn btn-sm btn-outline-success" data-action="operativo" data-id="${r.id_recurso}">
+              <i class="fa-solid fa-check-circle"></i> 
+            </button>
+            <button class="btn btn-sm btn-outline-success" data-action="mantenimiento" data-id="${r.id_recurso}">
+            <i class="fa-solid fa-screwdriver-wrench"></i>
+            </button>
+            <button class="btn btn-sm btn-outline-success" data-action="inactivo" data-id="${r.id_recurso}">
+            <i class="fa-solid fa-ban"></i>
+            </button>
+          </td>
+
       </tr>
     `).join("");
   }
@@ -298,6 +318,10 @@
     window.location.href = "./../bienvenida_dos.html"; // crear
   });
 
+  document.getElementById("btnRefrescar").addEventListener("click", () => {
+    cargar();
+  });
+
   document.getElementById("btnLimpiarFiltros").addEventListener("click", () => {
     busqueda.value = "";
     filtroTipo.value = "";
@@ -334,7 +358,31 @@
         alert(err.message || "No se pudo eliminar");
       }
     }
+
+    if(action === "operativo"){
+      await cambiarEstado(id,"operativo");
+      return;
+    }
+
+    if(action === "mantenimiento"){
+      await cambiarEstado(id,"mantenimiento");
+      return;
+    }
+
+    if(action === "inactivo"){
+      await cambiarEstado(id,"inactivo");
+      return;
+    }
   });
+
+  async function cambiarEstado(id, estado){
+    const r = await recursosGetById(id);
+      const recurso = r?.data || r;
+      recurso.estado = estado;
+      await recursosUpdate(id, recurso);
+      await cargar();
+      await enviarNotificacion(id, estado);
+  }
 
   cargar();
 </script>

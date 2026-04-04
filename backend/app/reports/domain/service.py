@@ -1,17 +1,19 @@
 import csv
 import io
-from openpyxl import Workbook
+from pathlib import Path
+from openpyxl import Workbook,load_workbook
 from openpyxl.styles import Font, PatternFill, Alignment
+import os
 
 class ReportsService:
     def __init__(self, repo):
         self.repo = repo
 
-    def get_dashboard_summary(self):
-        return self.repo.dashboard_summary()
+    def get_dashboard_summary(self,fecha_inicio=None, fecha_fin=None):
+        return self.repo.dashboard_summary(fecha_inicio, fecha_fin)
 
-    def generate_dashboard_csv(self) -> str:
-        data = self.get_dashboard_summary()
+    def generate_dashboard_csv(self,fecha_inicio=None, fecha_fin=None) -> str:
+        data = self.get_dashboard_summary(fecha_inicio, fecha_fin)
 
         output = io.StringIO()
         writer = csv.writer(output)
@@ -29,12 +31,21 @@ class ReportsService:
 
         return output.getvalue()
     
-    def generate_dashboard_excel(self) -> bytes:
-        data = self.get_dashboard_summary()
+    def generate_dashboard_excel(self,fecha_inicio=None, fecha_fin=None) -> bytes:
+        data = self.get_dashboard_summary(fecha_inicio, fecha_fin)
 
-        wb = Workbook()
-        ws = wb.active
-        ws.title = "Dashboard"
+        #wb = Workbook()
+        #ws = wb.active
+        #ws.title = "Dashboard"
+
+        base_dir = Path(__file__).resolve().parent
+        template_path = base_dir.parent / "templates" / "plantilla_dashboard.xlsx"
+        #template_path = os.path.join("../templates", "plantilla_dashboard.xlsx")
+        print('pathn del template ============>>>>>>>>>>>>>>>>>>>>>>>>>>>')
+        print (template_path)
+
+        wb = load_workbook(template_path)
+        ws = wb["datos"]  # nombre de la hoja
 
         # Título
         ws["A1"] = "Reporte Dashboard"

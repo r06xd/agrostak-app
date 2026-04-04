@@ -22,6 +22,8 @@ def create_user(db: Session, data: UsuarioCreate) -> UsuarioRead:
 
     if repo.get_user_by_email(str(data.correo)) is not None:
         raise HTTPException(status_code=409, detail="El correo ya está registrado.")
+    
+    validate_base64_image(data.foto_url)
 
     validate_password_strength(data.password)
 
@@ -39,12 +41,50 @@ def create_user(db: Session, data: UsuarioCreate) -> UsuarioRead:
     created = repo.create_user(user)
     return UsuarioRead.model_validate(created)
 
+from sqlalchemy.orm import Session
+from fastapi import HTTPException, status
+from datetime import datetime
+import base64
+
+from app.identity.domain.schemas import (
+    UsuarioCreate, UsuarioUpdate, UsuarioRead, LoginRequest, TokenResponse, RolRead
+)
+from app.identity.domain.validators import validate_password_strength
+from app.identity.infra.repository import IdentityRepository
+from app.identity.infra.models import UsuarioORM
+from app.identity.infra.security import hash_password, verify_password, create_access_token
+from app.config import settings
+from app.identity.domain.schemas import PermisoRead, MenuItemRead
+
+
+def validate_base64_image(foto_base64: str | None):
+    if not foto_base64:
+        return
+
+    if not isinstance(foto_base64, str):
+        raise HTTPException(status_code=400, detail="La imagen es inválida.")
+
+    if not foto_base64.startswith("data:image/"):
+        raise HTTPException(status_code=400, detail="La imagen debe venir en formato base64 válido.")
+
+    if ";base64," not in foto_base64:
+        raise HTTPException(status_code=400, detail="La imagen base64 es inválida.")
+
+    try:
+        header, encoded = foto_base64.split(";base64,", 1)
+        base64.b64decode(encoded, validate=True)
+    except Exception:
+        raise HTTPException(status_code=400, detail="La imagen base64 no pudo ser procesada.")
+
 
 def update_user(db: Session, id_usuario: int, data: UsuarioUpdate) -> UsuarioRead:
     repo = IdentityRepository(db)
     user = repo.get_user_by_id(id_usuario)
     if not user:
         raise HTTPException(status_code=404, detail="Usuario no encontrado.")
+    
+    print(data.foto_url)
+    validate_base64_image(data.foto_url)
 
     payload = data.model_dump(exclude_unset=True)
 
@@ -59,8 +99,11 @@ def update_user(db: Session, id_usuario: int, data: UsuarioUpdate) -> UsuarioRea
         user.correo = correo
 
     if "password" in payload:
-        validate_password_strength(payload["password"])
-        user.password_hash = hash_password(payload["password"])
+        try:
+            validate_password_strength(payload["password"])
+            user.password_hash = hash_password(payload["password"])
+        except ValueError as e:
+            raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=str(e))
 
     for field in ["id_rol", "nombres", "apellidos", "area_trabajo", "foto_url", "estado"]:
         if field in payload and field != "password":
@@ -133,3 +176,7 @@ def obtener_menu_usuario(db, user) -> list[MenuItemRead]:
 def obtener_usuario_por_id(db, id_usuario):
     repo = IdentityRepository(db)
     return repo.get_user_by_id(id_usuario)
+
+def obtener_usuario_admin(db):
+    repo = IdentityRepository(db)
+    return repo.get_user_admin()

@@ -148,6 +148,7 @@ a,
      -ms-transition: all .3s ease-in-out;
      -o-transition: all .3s ease-in-out;
      transition: all .3s ease-in-out;
+     margin: 1px;
 }
 
 img {
@@ -1075,3 +1076,13 @@ ul.location_icon li a:hover {
      padding-inline-end: 10px;
 }
 
+.contenedor-fechas{
+     display: flex;
+     justify-content: space-between;
+     align-items: center;
+     margin: 1.5%;
+}
+
+.contenedor-botones-reportesX{
+     justify-content: flex-end;
+}

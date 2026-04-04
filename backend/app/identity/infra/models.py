@@ -1,6 +1,7 @@
 from sqlalchemy import Column, Integer, String, Enum, DateTime, ForeignKey, Table, UniqueConstraint, Text
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
+from sqlalchemy.dialects.mysql import LONGTEXT
 
 from app.shared.base_model import Base
 
@@ -42,7 +43,7 @@ class UsuarioORM(Base):
     password_hash = Column(String(255), nullable=False)
 
     area_trabajo = Column(String(100), nullable=True)
-    foto_url = Column(String(255), nullable=True)
+    foto_url = Column(LONGTEXT, nullable=True)
 
     estado = Column(Enum("activo", "inactivo"), nullable=False, default="activo")
     fecha_creacion = Column(DateTime, nullable=False, server_default=func.now())

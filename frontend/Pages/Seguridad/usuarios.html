@@ -65,6 +65,15 @@
             </div>
 
             <div class="col-md-6">
+              <label class="form-label">Imagen</label>
+              <input type="file" id="foto" class="form-control" accept="image/*">
+            </div>
+
+            <div class="col-md-6">
+              <img id="preview" style="max-width:100%; max-height:150px; display:none;">
+            </div>
+
+            <div class="col-md-6">
               <label class="form-label" for="id_rol">Rol</label>
               <select id="id_rol" class="form-select" required>
                 <option value="">Seleccione</option>
@@ -181,6 +190,14 @@
       nombre.value = u.nombre ?? u.full_name ?? u.nombres ?? "";
       id_rol.value = u.id_rol ?? u.rol ?? u.role ?? u.idRol ?? "";
       estado.value = u.estado ?? u.status ?? "activo";
+
+        if (u.foto_url) {
+          fotoBase64 = u.foto_url;
+
+          const preview = document.getElementById("preview");
+          preview.src = fotoBase64;
+          preview.style.display = "block";
+        }
     }
 
     document.getElementById("usuarioForm").addEventListener("submit", async (e) => {
@@ -197,7 +214,8 @@
         usuario: "", //(usuario.value || "").trim() || null,
         estado: estado.value,
         password: (password.value || "").trim(),
-        area_trabajo:""
+        area_trabajo:"",
+        foto_url: fotoBase64
       };
 
       // Solo envía password si está lleno
@@ -209,6 +227,7 @@
       }
 
       try{
+        console.log(payload.foto_url);
         if(id) await usuariosUpdate(id, payload);
         else await usuariosCreate(payload);
         
@@ -229,6 +248,25 @@
         showAlert(err.message || "Error cargando datos");
       }
     })();
+
+    let fotoBase64 = null;
+
+document.getElementById("foto").addEventListener("change", function(e){
+    const file = e.target.files[0];
+    if(!file) return;
+
+    const reader = new FileReader();
+
+    reader.onload = function(){
+      fotoBase64 = reader.result;
+
+      const preview = document.getElementById("preview");
+      preview.src = fotoBase64;
+      preview.style.display = "block";
+    };
+
+    reader.readAsDataURL(file);
+  });
   </script>
 </body>
 </html>

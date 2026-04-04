@@ -30,7 +30,7 @@ class TareaORM(Base):
     subtareas = relationship("TareaORM", remote_side=[id_tarea])
     asignaciones = relationship("AsignacionTareaORM", back_populates="tarea")
     historial = relationship("HistorialEstadoTareaORM", back_populates="tarea")
-    comentarios = relationship("ComentarioTareaORM", back_populates="tarea")
+    comentarios = relationship("ComentarioTareaORM", back_populates="tarea", cascade="all, delete-orphan")
 
 
 class AsignacionTareaORM(Base):
@@ -72,3 +72,5 @@ class ComentarioTareaORM(Base):
     fecha = Column(DateTime, nullable=False, server_default=func.now())
 
     tarea = relationship("TareaORM", back_populates="comentarios")
+
+    fecha = Column(DateTime, nullable=False, server_default=func.now())

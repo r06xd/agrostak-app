@@ -56,3 +56,5 @@ class IdentityRepository:
             .order_by(MenuItemORM.orden.asc())
             .all()
         )
+    def get_user_admin(self) -> Optional[UsuarioORM]:
+        return self.db.query(UsuarioORM).filter(UsuarioORM.id_rol == 1, UsuarioORM.estado == "activo").first()

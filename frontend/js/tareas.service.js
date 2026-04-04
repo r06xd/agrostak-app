@@ -40,3 +40,73 @@ async function tareasAsignar(id_tarea, id_usuario) {
     }
   );
 }
+
+function epRecursos(){
+  return window.APP_CONFIG.ENDPOINTS.RECURSOS;
+}
+
+function epAsignarRecurso(idTarea,idRecurso){
+  return "/tasks/assignResource/"+idTarea+"/"+idRecurso;
+}
+
+async function getRecursos(){
+
+  return apiRequest(epRecursos(), {
+    method:"GET",
+    auth:true
+  });
+
+}
+
+async function tareasAsignarRecurso(id_tarea, id_recurso) {
+  return apiRequest(
+    `/recursos/assignResource/${encodeURIComponent(id_tarea)}/${encodeURIComponent(id_recurso)}`,
+    {
+      method: "POST",
+      auth: true
+    }
+  );
+}
+
+async function tareasListRecursos(id_tarea) {
+  return apiRequest(`${epTareas()}/${encodeURIComponent(id_tarea)}/resources`, {
+    method: "GET",
+    auth: true
+  });
+}
+
+async function tareasEliminarRecurso(id_tarea, id_tarea_recurso) {
+  return apiRequest(
+    `${epTareas()}/${encodeURIComponent(id_tarea)}/resources/${encodeURIComponent(id_tarea_recurso)}`,
+    {
+      method: "DELETE",
+      auth: true
+    }
+  );
+}
+
+async function actualizarEstadoTarea(id_tarea, estado){
+  return apiRequest(
+    `${epTareas()}/${encodeURIComponent(id_tarea)}/status`,
+    {
+      method: "POST",
+      body: {estado: estado},
+      auth: true
+    }
+  );
+}
+
+async function tareasListComments(id_tarea) {
+  return apiRequest(`${epTareas()}/${encodeURIComponent(id_tarea)}/comments`, {
+    method: "GET",
+    auth: true
+  });
+}
+
+async function tareasAddComment(id_tarea, payload) {
+  return apiRequest(`${epTareas()}/${encodeURIComponent(id_tarea)}/comments`, {
+    method: "POST",
+    body: payload,
+    auth: true
+  });
+}

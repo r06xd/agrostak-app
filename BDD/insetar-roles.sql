@@ -3,6 +3,7 @@ INSERT INTO roles(nombre, descripcion) VALUES
 ('Administrador','Acceso total'),
 ('Supervisor','Supervisa tareas'),
 ('Trabajador','Ejecuta tareas');
+('Tecnico','Arregla recursos');
 
 #Crear los permisos
 INSERT INTO permisos (clave, descripcion, modulo) VALUES
@@ -32,6 +33,10 @@ WHERE clave IN ('TAREAS_LISTAR','TAREAS_CREAR','TAREAS_EDITAR','TAREAS_ASIGNAR',
 INSERT IGNORE INTO rol_permisos (id_rol, id_permiso)
 SELECT 3, id_permiso FROM permisos
 WHERE clave IN ('TAREAS_LISTAR','TAREAS_EDITAR');
+
+INSERT IGNORE INTO rol_permisos (id_rol, id_permiso)
+SELECT 4, id_permiso FROM permisos
+WHERE clave IN ('RECURSOS_CRUD');
 
 INSERT INTO menu_items (clave,label,path,icon,orden,permiso_clave,activo) VALUES
 ('menu_usuarios','Usuarios','/usuarios','users',1,'USUARIOS_LISTAR',1),

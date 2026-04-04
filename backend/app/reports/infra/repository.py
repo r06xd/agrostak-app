@@ -4,16 +4,26 @@ from datetime import datetime
 
 from app.tasks.infra.models import TareaORM
 from app.resources.infra.models import RecursoORM
+from datetime import datetime
+from sqlalchemy import and_
 
 class ReportsRepository:
     def __init__(self, db: Session):
         self.db = db
 
-    def dashboard_summary(self):
-        # ---- TAREAS ----
+    def dashboard_summary(self, fecha_inicio=None, fecha_fin=None):
         now = datetime.utcnow()
 
-        tareas = self.db.query(
+        # ---- FILTRO DINÁMICO ----
+        filtros = []
+        if fecha_inicio:
+            filtros.append(TareaORM.fecha_fin_prog >= fecha_inicio)
+
+        if fecha_fin:
+            filtros.append(TareaORM.fecha_fin_prog <= fecha_fin)
+
+        # ---- QUERY TAREAS ----
+        query_tareas = self.db.query(
             func.count(TareaORM.id_tarea).label("total"),
             func.sum(case((TareaORM.estado == "pendiente", 1), else_=0)).label("pendientes"),
             func.sum(case((TareaORM.estado == "en_progreso", 1), else_=0)).label("en_progreso"),
@@ -27,9 +37,16 @@ class ReportsRepository:
                     1
                 ), else_=0)
             ).label("vencidas"),
-        ).one()
+        )
 
-        # ---- RECURSOS ----
+        # Aplicar filtros si existen
+        if filtros:
+            query_tareas = query_tareas.filter(and_(*filtros))
+
+        print(str(query_tareas.statement.compile(compile_kwargs={"literal_binds": True})))
+        tareas = query_tareas.one()
+
+        # ---- RECURSOS (sin filtro por ahora) ----
         recursos = self.db.query(
             func.count(RecursoORM.id_recurso).label("total"),
             func.sum(case((RecursoORM.cantidad_disponible <= 0, 1), else_=0)).label("sin_stock"),

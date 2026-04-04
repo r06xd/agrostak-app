@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Enum, Numeric
+from sqlalchemy import Column, Integer, String, Enum, Numeric,ForeignKey
 from app.shared.base_model import Base
 from app.resources.domain.entities import TipoRecurso, EstadoRecurso
 
@@ -14,3 +14,11 @@ class RecursoORM(Base):
     cantidad_disponible = Column(Numeric(10, 2), nullable=False, default=0)
     ubicacion = Column(String(100))
     estado = Column(Enum(EstadoRecurso), nullable=False, default=EstadoRecurso.operativo)
+
+class RecursoTareaORM(Base):
+    __tablename__ = "tareas_recursos"
+
+    id_tarea_recurso = Column(Integer, primary_key=True, autoincrement=True)
+    id_recurso = Column(Integer, ForeignKey("recursos.id_recurso"), primary_key=True)
+    id_tarea = Column(Integer, ForeignKey("tareas.id_tarea"), primary_key=True)
+    cantidad_usada = Column(Numeric(10, 2), nullable=False, default=0)

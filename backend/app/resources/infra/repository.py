@@ -1,6 +1,6 @@
 from typing import List, Optional
 from sqlalchemy.orm import Session
-from app.resources.infra.models import RecursoORM
+from app.resources.infra.models import RecursoORM, RecursoTareaORM
 from app.resources.domain.schemas import RecursoCreate, RecursoUpdate
 
 
@@ -38,5 +38,11 @@ class RecursoRepository:
         if not recurso:
             return False
         self.db.delete(recurso)
+        self.db.commit()
+        return True
+
+    def asignarRecursoTarea(self, id_recurso: int, id_tarea: int) -> bool:
+        recursoTarea = RecursoTareaORM(id_recurso=id_recurso, id_tarea=id_tarea)
+        self.db.add(recursoTarea)
         self.db.commit()
         return True

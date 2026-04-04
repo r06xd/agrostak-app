@@ -123,6 +123,7 @@
                 <th>Responsable</th>
                 <th>Fecha Limite</th>
                 <th class="actions-col text-end">Acciones</th>
+                <th>Comentarios</th>
               </tr>
             </thead>
             <tbody id="tbodyTareas"></tbody>
@@ -165,15 +166,25 @@
 
     function badge(val){ return `<span class="badge-soft">${safe(val)}</span>`; }
 
-    function render(rows){
+    const menuTrabajador = `style="display: none;"`
+
+    async function render(rows){
+      const user = await getCurrentUser();
+
+      if(user.id_rol === 3){
+        const btnCrear = document.getElementById("btnCrear");
+        btnCrear.hidden = true;
+      }
+
       tbody.innerHTML = rows.map(t => `
         <tr>
           <td class="fw-semibold">${safe(t.titulo ?? t.nombre ?? t.title)}</td>
           <td>${badge(t.prioridad ?? "-")}</td>
-          <td>${badge(t.estado ?? "-")}</td>
+          <td>${badge((t.estado=== "en_progreso"? "En Proceso" : t.estado) ?? "-")}</td>
           <td>${safe(t.asignado_a ?? "-")}</td>
           <td>${safe(formatDate(t.fecha_fin_real) ?? "-")}</td>
-          <td class="text-end">
+
+          <td class="text-end" ${user.id_rol !== 3 ? "" : menuTrabajador}>
             <button class="btn btn-sm btn-outline-primary me-1" data-action="editar" data-id="${t.id_tarea ?? t.id ?? t.idTarea}">
               <i class="fa-solid fa-pen-to-square"></i>
             </button>
@@ -183,7 +194,26 @@
             <button class="btn btn-sm btn-outline-success" data-action="asignar" data-id="${t.id_tarea ?? t.id ?? t.idTarea}">
             <i class="fa-solid fa-user-plus"></i>
             </button>
+            <button class="btn btn-sm btn-outline-warning" data-action="asignar-recurso" data-id="${t.id_tarea ?? t.id ?? t.idTarea}" title="Asignar recurso">
+            <i class="fa-solid fa-box-open"></i>
+            </button>
           </td>
+
+          <td class="text-end" ${user.id_rol === 3 ? "" : menuTrabajador}>
+            <button class="btn btn-sm btn-outline-danger" data-action="proceso" data-id="${t.id_tarea ?? t.id ?? t.idTarea}">
+              EN PROCESO
+            </button>
+            <button class="btn btn-sm btn-outline-success" data-action="completar" data-id="${t.id_tarea ?? t.id ?? t.idTarea}">
+            COMPLETAR
+            </button>
+          </td>
+
+          <td class="text-end">
+            <button class="btn btn-sm btn-outline-dark me-1" data-action="comentarios" data-id="${t.id_tarea ?? t.id ?? t.idTarea}" title="Comentarios">
+            <i class="fa-solid fa-comments"></i>
+            </button>
+          </td>
+
         </tr>
       `).join("");
 
@@ -295,6 +325,15 @@
         }
       }
       if(action === "asignar"){window.location.href = "./asignarTarea.html?tarea=" + encodeURIComponent(id);}
+
+      if(action === "asignar-recurso"){
+        window.location.href = "./asignarRecursoTarea.html?tarea=" + encodeURIComponent(id);
+      }
+
+      if(action === "proceso"){await actualizarEstadoTarea(id, "en_progreso"); await cargar();}
+      if(action === "completar"){await actualizarEstadoTarea(id, "completada"); await cargar();}
+
+      if(action === "comentarios"){window.location.href = "./comentariosTarea.html?tarea=" + encodeURIComponent(id);}
     });
 
     function formatDate(fecha) {

@@ -8,6 +8,10 @@
   <link rel="stylesheet" href="../../css/bootstrap.min.css">
   <link rel="stylesheet" href="../../css/style.css">
   <link rel="stylesheet" href="../../css/responsive.css">
+  <!-- FontAwesome (si ya lo usas en el proyecto) -->
+  <link rel="stylesheet"
+    href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"
+    crossorigin="anonymous" referrerpolicy="no-referrer">
 
   <style>
     body{background:#f5f7fb;}
@@ -51,11 +55,12 @@
           </div>
         </div>
 
-        <div class="d-flex gap-2">
-          <button class="btn btn-outline-secondary" id="btnVolver">Volver</button>
-          <button class="btn btn-outline-secondary" id="btnRefrescar">Refrescar</button>
-          <button class="btn btn-outline-success" id="btnCsv">Descargar CSV</button>
-          <button class="btn btn-success" id="btnExcel">Descargar Excel</button>
+        <div class="d-flex gap-2 contenedor-botones-reportes">
+          <button class="btn btn-outline-secondary" id="btnVolver"><i class="fa-solid fa-arrow-left"></i></button>
+          <button class="btn btn-outline-secondary" id="btnRefrescar"><i class="fa-solid fa-rotate-right"></i></button>
+          <button class="btn btn-outline-success" id="btnCsv"><i class="fa-solid fa-file-csv"></i></button>
+          <button class="btn btn-outline-success" id="btnExcel"><i class="fa-solid fa-file-excel"></i></button>
+          <button class="btn btn-outline-success" id="btnPdf"><i class="fa-solid fa-file-pdf"></i></button>
         </div>
       </div>
 
@@ -64,6 +69,16 @@
 
         <!-- KPIs -->
         <div class="section-title">Tareas</div>
+        <div class="col-md-12 contenedor-fechas">
+          <div class="col-md-6">
+              <label class="form-label" for="fecha_limite">Fecha Desde</label>
+              <input id="fecha_inicio" type="date" class="form-control">
+          </div>
+          <div class="col-md-6">
+              <label class="form-label" for="fecha_limite">Fecha hasta</label>
+              <input id="fecha_fin" type="date" class="form-control">
+          </div>
+        </div>
         <div class="kpi-grid">
           <div class="kpi">
             <div class="label">Total</div>
@@ -99,6 +114,37 @@
             <div class="label">Vencidas</div>
             <div class="value" id="t_vencidas">—</div>
             <div class="hint">Fuera de fecha</div>
+          </div>
+        </div>
+
+        <!--Estructura graficos-->
+        <div class="row g-4 mt-1">
+          <div class="col-lg-6">
+            <div class="card border-0 shadow-sm rounded-4 h-100">
+              <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                  <h5 class="mb-0">Estado de tareas</h5>
+                  <span class="badge bg-light text-dark">Visual</span>
+                </div>
+                <div class="chart-box">
+                  <canvas id="chartTareas" height="260"></canvas>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="col-lg-6">
+            <div class="card border-0 shadow-sm rounded-4 h-100">
+              <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                  <h5 class="mb-0">Estado de recursos</h5>
+                  <span class="badge bg-light text-dark">Visual</span>
+                </div>
+                <div class="chart-box">
+                  <canvas id="chartRecursos"></canvas>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
 
@@ -165,6 +211,7 @@
   <script src="../../js/auth.js"></script>
 
   <script src="../../js/reportes.service.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
   <script>
     requireAuthOrRedirect();
@@ -181,10 +228,20 @@
       document.getElementById(id).textContent = (v ?? 0).toString();
     }
 
+    const hoy = new Date().toISOString().split('T')[0];
+    document.getElementById('fecha_inicio').value = hoy;
+    document.getElementById('fecha_fin').value = hoy;
+
     async function cargar(){
       hideAlert();
       try{
-        const data = await dashboardSummaryGet();
+
+        const params = new URLSearchParams({
+            fecha_inicio: document.getElementById('fecha_inicio').value,
+            fecha_fin: document.getElementById('fecha_fin').value
+          });
+
+        const data = await dashboardSummaryGet(params);
         const d = data?.data || data;
 
         setText("t_total", d.tareas_total);
@@ -218,8 +275,12 @@
 
     document.getElementById("btnCsv").addEventListener("click", async () => {
       try {
+        const params = new URLSearchParams({
+            fecha_inicio: document.getElementById('fecha_inicio').value,
+            fecha_fin: document.getElementById('fecha_fin').value
+          });
         hideAlert();
-        await dashboardDownloadCsv();
+        await dashboardDownloadCsv(params);
       } catch (err) {
         showAlert(err.message || "No se pudo descargar el CSV");
       }
@@ -227,8 +288,12 @@
 
     document.getElementById("btnExcel").addEventListener("click", async () => {
       try {
+        const params = new URLSearchParams({
+            fecha_inicio: document.getElementById('fecha_inicio').value,
+            fecha_fin: document.getElementById('fecha_fin').value
+          });
         hideAlert();
-        await dashboardDownloadExcel();
+        await dashboardDownloadExcel(params);
       } catch (err) {
         showAlert(err.message || "No se pudo descargar el Excel");
       }
@@ -236,5 +301,170 @@
 
     cargar();
   </script>
+
+  <script>
+    //Script para visualizar los graficos
+  requireAuthOrRedirect();
+
+  let chartTareas = null;
+  let chartRecursos = null;
+
+  function destroyCharts() {
+    if (chartTareas) {
+      chartTareas.destroy();
+      chartTareas = null;
+    }
+
+    if (chartRecursos) {
+      chartRecursos.destroy();
+      chartRecursos = null;
+    }
+  }
+
+  function renderCharts(summary) {
+    destroyCharts();
+
+    const tareasPendientes = Number(summary.tareas_pendientes || 0);
+    const tareasEnProgreso = Number(summary.tareas_en_progreso || 0);
+    const tareasCompletadas = Number(summary.tareas_completadas || 0);
+    const tareasCanceladas = Number(summary.tareas_canceladas || 0);
+    const tareasVencidas = Number(summary.tareas_vencidas || 0);
+
+    const recursosTotal = Number(summary.recursos_total || 0);
+    const recursosSinStock = Number(summary.recursos_sin_stock || 0);
+    const recursosMantenimiento = Number(summary.recursos_en_mantenimiento || 0);
+
+    const ctxTareas = document.getElementById("chartTareas");
+    const ctxRecursos = document.getElementById("chartRecursos");
+
+    chartTareas = new Chart(ctxTareas, {
+      type: "doughnut",
+      data: {
+        labels: [
+          "Pendientes",
+          "En progreso",
+          "Completadas",
+          "Canceladas",
+          "Vencidas"
+        ],
+        datasets: [{
+          data: [
+            tareasPendientes,
+            tareasEnProgreso,
+            tareasCompletadas,
+            tareasCanceladas,
+            tareasVencidas
+          ],
+          backgroundColor: [
+            "#f0ad4e",
+            "#5bc0de",
+            "#5cb85c",
+            "#d9534f",
+            "#6f42c1"
+          ],
+          borderWidth: 2
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: {
+            position: "bottom"
+          }
+        }
+      }
+    });
+
+    chartRecursos = new Chart(ctxRecursos, {
+      type: "bar",
+      data: {
+        labels: [
+          "Total",
+          "Sin stock",
+          "En mantenimiento"
+        ],
+        datasets: [{
+          label: "Cantidad",
+          data: [
+            recursosTotal,
+            recursosSinStock,
+            recursosMantenimiento
+          ],
+          backgroundColor: [
+            "#0d6efd",
+            "#dc3545",
+            "#ffc107"
+          ],
+          borderRadius: 8
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        scales: {
+          y: {
+            beginAtZero: true,
+            ticks: {
+              precision: 0
+            }
+          }
+        },
+        plugins: {
+          legend: {
+            display: false
+          }
+        }
+      }
+    });
+  }
+
+  function setText(id, value) {
+    const el = document.getElementById(id);
+    if (el) el.textContent = value ?? 0;
+  }
+
+  async function cargarDashboard() {
+    try {
+      const fecha_inicio = document.getElementById("fecha_inicio")?.value || null;
+      const fecha_fin = document.getElementById("fecha_fin")?.value || null;
+
+      const data = await dashboardSummaryGet(fecha_inicio, fecha_fin);
+      const summary = data?.data || data || {};
+
+      setText("tareas_total", summary.tareas_total || 0);
+      setText("tareas_pendientes", summary.tareas_pendientes || 0);
+      setText("tareas_en_progreso", summary.tareas_en_progreso || 0);
+      setText("tareas_completadas", summary.tareas_completadas || 0);
+      setText("tareas_canceladas", summary.tareas_canceladas || 0);
+      setText("tareas_vencidas", summary.tareas_vencidas || 0);
+      setText("recursos_total", summary.recursos_total || 0);
+      setText("recursos_sin_stock", summary.recursos_sin_stock || 0);
+      setText("recursos_en_mantenimiento", summary.recursos_en_mantenimiento || 0);
+
+      renderCharts(summary);
+    } catch (error) {
+      console.error("Error cargando dashboard:", error);
+      alert(error.message || "No se pudo cargar el dashboard.");
+    }
+  }
+
+  document.addEventListener("DOMContentLoaded", () => {
+    cargarDashboard();
+
+    const btnRefrescar = document.getElementById("btnRefrescar");
+    if (btnRefrescar) {
+      btnRefrescar.addEventListener("click", cargarDashboard);
+    }
+  });
+</script>
+
+<style>
+  .chart-box{
+    position: relative;
+    width: 100%;
+    height: 320px;
+  }
+</style>
 </body>
 </html>

@@ -38,3 +38,10 @@ function logout() {
   clearToken();
   window.location.href = "../index.html";
 }
+
+async function getCurrentUser() {
+  return apiRequest("/identity/me", {
+    method: "GET",
+    auth: true
+  });
+}

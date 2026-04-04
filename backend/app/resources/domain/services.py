@@ -6,6 +6,8 @@ from app.resources.domain.schemas import (
     RecursoUpdate,
     RecursoRead,
 )
+from app.notifications.infra.onesignal_client import send_resource_status_push
+from app.identity.infra.repository import IdentityRepository
 
 
 def listar_recursos(db: Session) -> List[RecursoRead]:
@@ -39,3 +41,12 @@ def actualizar_recurso(db: Session, id_recurso: int, data: RecursoUpdate) -> Opt
 def eliminar_recurso(db: Session, id_recurso: int) -> bool:
     repo = RecursoRepository(db)
     return repo.eliminar(id_recurso)
+
+def asignarRecursoTarea(db: Session, id_recurso: int, id_tarea: int) -> bool:
+    repo = RecursoRepository(db)
+    return repo.asignarRecursoTarea(id_recurso, id_tarea)
+
+def enviarNotificacion(db: Session,estado: str, id_recurso: int):
+    repoIdentity = IdentityRepository(db)
+    id_usuario = repoIdentity.get_user_admin(id_recurso);
+    send_resource_status_push(id_usuario, estado, id_recurso)
