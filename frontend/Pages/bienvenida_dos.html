@@ -75,8 +75,71 @@
       </div>
 
       <div class="resource-card-body">
+        <div class="resource-card-body">
+
+          <div class="alerts-grid mb-4">
+            <button type="button" class="alert-tile alert-insumo" id="btnInsumosPorAcabarse">
+              <div class="alert-icon">
+                <i class="fa-solid fa-box-open"></i>
+              </div>
+              <div class="alert-content">
+                <div class="alert-title">Insumos por acabarse</div>
+                <div class="alert-subtitle">Cantidad menor a 20</div>
+              </div>
+              <span class="badge text-bg-danger fs-6" id="badgeInsumosPorAcabarse">0</span>
+            </button>
+
+            <button type="button" class="alert-tile alert-herramienta" id="btnHerramientasReparadas">
+              <div class="alert-icon">
+                <i class="fa-solid fa-screwdriver-wrench"></i>
+              </div>
+              <div class="alert-content">
+                <div class="alert-title">Herramientas reparadas hoy</div>
+                <div class="alert-subtitle">Solo actualizadas hoy y operativas</div>
+              </div>
+              <span class="badge text-bg-success fs-6" id="badgeHerramientasReparadas">0</span>
+            </button>
+          </div>
+
+          <div id="menuGrid" class="menu-grid"></div>
+          <div id="emptyState" class="empty-state">No tienes opciones asignadas en el menú.</div>
+        </div>
         <div id="menuGrid" class="menu-grid"></div>
         <div id="emptyState" class="empty-state">No tienes opciones asignadas en el menú.</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal fade" id="modalInsumosPorAcabarse" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-lg modal-dialog-scrollable">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">
+          <i class="fa-solid fa-box-open text-danger me-2"></i>
+          Insumos por acabarse
+        </h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+      </div>
+      <div class="modal-body">
+        <div id="wrapInsumosPorAcabarse"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+  <div class="modal fade" id="modalHerramientasReparadas" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-scrollable">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">
+            <i class="fa-solid fa-screwdriver-wrench text-success me-2"></i>
+            Herramientas reparadas hoy
+          </h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+        </div>
+        <div class="modal-body">
+          <div id="wrapHerramientasReparadas"></div>
+        </div>
       </div>
     </div>
   </div>
@@ -91,6 +154,18 @@
   <script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
 
   <script>
+    //Alertas
+    const badgeInsumosPorAcabarse = document.getElementById("badgeInsumosPorAcabarse");
+    const badgeHerramientasReparadas = document.getElementById("badgeHerramientasReparadas");
+    const btnInsumosPorAcabarse = document.getElementById("btnInsumosPorAcabarse");
+    const btnHerramientasReparadas = document.getElementById("btnHerramientasReparadas");
+    const wrapInsumosPorAcabarse = document.getElementById("wrapInsumosPorAcabarse");
+    const wrapHerramientasReparadas = document.getElementById("wrapHerramientasReparadas");
+
+    let alertasCache = {
+      insumos_por_acabarse: [],
+      herramientas_reparadas_hoy: []
+    };
     requireAuthOrRedirect();
 
     const grid = document.getElementById("menuGrid");
@@ -236,18 +311,99 @@
       renderMenu(menu);
     }
 
+    btnInsumosPorAcabarse.addEventListener("click", () => {
+      const modal = new bootstrap.Modal(document.getElementById("modalInsumosPorAcabarse"));
+      modal.show();
+    });
+
+    btnHerramientasReparadas.addEventListener("click", () => {
+      const modal = new bootstrap.Modal(document.getElementById("modalHerramientasReparadas"));
+      modal.show();
+    });
+
     document.getElementById("btnLogout").addEventListener("click", logout);
     document.getElementById("btnReloadMenu").addEventListener("click", async () => {
       try{
-        await loadAndRenderMenu(true);
+        await Promise.all([
+          loadAndRenderMenu(true),
+          loadAlertasRecursos()
+        ]);
       }catch(err){
         alert(err.message || "No se pudo actualizar el menú");
       }
     });
 
-    loadAndRenderMenu(false).catch(err => {
-      alert(err.message || "No se pudo cargar el menú");
+    Promise.all([
+      loadAndRenderMenu(false),
+      loadAlertasRecursos()
+    ]).catch(err => {
+      alert(err.message || "No se pudo cargar la pantalla de bienvenida");
     });
+
+    //Mostrar los modeles de alerta
+    function escapeHtml(value){
+  return String(value ?? "")
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#039;");
+}
+
+function renderAlertTable(items, emptyMessage){
+  if(!items || !items.length){
+    return `<div class="alert alert-light border mb-0">${emptyMessage}</div>`;
+  }
+
+  return `
+    <div class="table-responsive">
+      <table class="table table-sm table-hover align-middle">
+        <thead>
+          <tr>
+            <th>Nombre</th>
+            <th>Cantidad</th>
+            <th>Unidad</th>
+            <th>Estado</th>
+            <th>Ubicación</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${items.map(item => `
+            <tr>
+              <td>${escapeHtml(item.nombre)}</td>
+              <td>${escapeHtml(item.cantidad_disponible)}</td>
+              <td>${escapeHtml(item.unidad_medida)}</td>
+              <td>${escapeHtml(item.estado)}</td>
+              <td>${escapeHtml(item.ubicacion || "-")}</td>
+            </tr>
+          `).join("")}
+        </tbody>
+      </table>
+    </div>
+  `;
+}
+
+  async function loadAlertasRecursos(){
+    const data = await apiRequest(window.APP_CONFIG.ENDPOINTS.RECURSOS_ALERTAS);
+
+    alertasCache = {
+      insumos_por_acabarse: data?.insumos_por_acabarse || [],
+      herramientas_reparadas_hoy: data?.herramientas_reparadas_hoy || []
+    };
+
+    badgeInsumosPorAcabarse.textContent = data?.insumos_por_acabarse_total ?? 0;
+    badgeHerramientasReparadas.textContent = data?.herramientas_reparadas_hoy_total ?? 0;
+
+    wrapInsumosPorAcabarse.innerHTML = renderAlertTable(
+      alertasCache.insumos_por_acabarse,
+      "No hay insumos por acabarse en este momento."
+    );
+
+    wrapHerramientasReparadas.innerHTML = renderAlertTable(
+      alertasCache.herramientas_reparadas_hoy,
+      "No hay herramientas reparadas hoy."
+    );
+  }
   </script>
 </body>
 </html>

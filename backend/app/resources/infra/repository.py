@@ -2,6 +2,8 @@ from typing import List, Optional
 from sqlalchemy.orm import Session
 from app.resources.infra.models import RecursoORM, RecursoTareaORM
 from app.resources.domain.schemas import RecursoCreate, RecursoUpdate
+from datetime import date
+from sqlalchemy import func
 
 
 class RecursoRepository:
@@ -46,3 +48,28 @@ class RecursoRepository:
         self.db.add(recursoTarea)
         self.db.commit()
         return True
+    
+    def listar_insumos_por_acabarse(self, limite: int = 20) -> List[RecursoORM]:
+        return (
+            self.db.query(RecursoORM)
+            .filter(
+                RecursoORM.tipo == "insumo",
+                RecursoORM.cantidad_disponible < limite
+            )
+            .order_by(RecursoORM.cantidad_disponible.asc(), RecursoORM.nombre.asc())
+            .all()
+        )
+
+    def listar_herramientas_reparadas_hoy(self) -> List[RecursoORM]:
+        hoy = date.today()
+
+        return (
+            self.db.query(RecursoORM)
+            .filter(
+                RecursoORM.tipo == "herramienta",
+                RecursoORM.estado == "operativo",
+                func.date(RecursoORM.fecha_reparacion) == hoy
+            )
+            .order_by(RecursoORM.fecha_reparacion.desc(), RecursoORM.nombre.asc())
+            .all()
+        )

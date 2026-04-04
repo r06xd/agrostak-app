@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Enum, Numeric,ForeignKey
+from sqlalchemy import Column, Integer, String, Enum, Numeric,ForeignKey,DateTime,func
 from app.shared.base_model import Base
 from app.resources.domain.entities import TipoRecurso, EstadoRecurso
 
@@ -14,6 +14,14 @@ class RecursoORM(Base):
     cantidad_disponible = Column(Numeric(10, 2), nullable=False, default=0)
     ubicacion = Column(String(100))
     estado = Column(Enum(EstadoRecurso), nullable=False, default=EstadoRecurso.operativo)
+
+    # NUEVO
+    fecha_reparacion = Column(
+        DateTime,
+        nullable=False,
+        server_default=func.now(),
+        onupdate=func.now()
+    )
 
 class RecursoTareaORM(Base):
     __tablename__ = "tareas_recursos"

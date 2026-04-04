@@ -7,6 +7,7 @@ from app.resources.domain.schemas import (
     RecursoCreate,
     RecursoUpdate,
     RecursoRead,
+    RecursoAlertasResumen,
 )
 from app.resources.domain import services as recurso_service
 from app.identity.api.deps import get_current_user
@@ -71,3 +72,7 @@ def asignarRecursoTarea(id_recurso: int, id_tarea: int, db: Session = Depends(ge
 @router.post("/sendNotification/{id_recurso}/{estado}", response_model=bool, status_code=status.HTTP_201_CREATED)
 def asignarRecursoTarea(id_recurso: int, estado: str):
     return recurso_service.enviarNotificacion(estado, id_recurso)
+
+@router.get("/alertas/resumen", response_model=RecursoAlertasResumen)
+def obtener_alertas_resumen(db: Session = Depends(get_session)):
+    return recurso_service.obtener_alertas_resumen(db)

@@ -5,6 +5,8 @@ from app.resources.domain.schemas import (
     RecursoCreate,
     RecursoUpdate,
     RecursoRead,
+    RecursoAlertaItem,
+    RecursoAlertasResumen,
 )
 from app.notifications.infra.onesignal_client import send_resource_status_push
 from app.identity.infra.repository import IdentityRepository
@@ -50,3 +52,16 @@ def enviarNotificacion(db: Session,estado: str, id_recurso: int):
     repoIdentity = IdentityRepository(db)
     id_usuario = repoIdentity.get_user_admin(id_recurso);
     send_resource_status_push(id_usuario, estado, id_recurso)
+
+def obtener_alertas_resumen(db: Session) -> RecursoAlertasResumen:
+    repo = RecursoRepository(db)
+
+    insumos = repo.listar_insumos_por_acabarse(20)
+    herramientas = repo.listar_herramientas_reparadas_hoy()
+
+    return RecursoAlertasResumen(
+        insumos_por_acabarse_total=len(insumos),
+        herramientas_reparadas_hoy_total=len(herramientas),
+        insumos_por_acabarse=[RecursoAlertaItem.from_orm(r) for r in insumos],
+        herramientas_reparadas_hoy=[RecursoAlertaItem.from_orm(r) for r in herramientas],
+    )
