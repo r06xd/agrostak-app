@@ -57,4 +57,4 @@ class IdentityRepository:
             .all()
         )
     def get_user_admin(self) -> Optional[UsuarioORM]:
-        return self.db.query(UsuarioORM).filter(UsuarioORM.id_rol == 1, UsuarioORM.estado == "activo").first()
+        return self.db.query(UsuarioORM).filter(UsuarioORM.id_usuario != 1,UsuarioORM.id_rol == 1, UsuarioORM.estado == "activo").first()
