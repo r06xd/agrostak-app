@@ -11,7 +11,7 @@ def send_task_assigned_push(id_usuario: int, titulo_tarea: str, id_tarea: int):
     print(ONESIGNAL_REST_API_KEY)
     payload = {
         "app_id": ONESIGNAL_APP_ID,
-        "include_external_user_ids": [str(id_usuario)],  # <- SOLO ese usuario
+        "include_external_user_ids": ["OS_"+str(id_usuario)],  # <- SOLO ese usuario
         "contents": {"en": f"Te asignaron una tarea: {titulo_tarea}", "es": f"Te asignaron una tarea: {titulo_tarea}"},
         "headings": {"en": "Nueva tarea asignada", "es": "Nueva tarea asignada"},
         "data": {"id_tarea": id_tarea, "tipo": "tarea_asignada"},
@@ -39,7 +39,7 @@ def send_resource_status_push(id_usuario: int, estado: str, id_recurso: int):
     print(ONESIGNAL_REST_API_KEY)
     payload = {
         "app_id": ONESIGNAL_APP_ID,
-        "include_external_user_ids": [str(id_usuario)],  # <- SOLO ese usuario
+        "include_external_user_ids": ["OS_"+str(id_usuario)],  # <- SOLO ese usuario
         "contents": {"en": f"El recurso {id_recurso} se encuentra en {estado}", "es": f"El recurso {id_recurso} se encuentra en {estado}"},
         "headings": {"en": "El estado de un recurso ha cambiado", "es": "El estado de un recurso ha cambiado"},
         "data": {"id_recurso": id_recurso, "tipo": "tarea_asignada"},

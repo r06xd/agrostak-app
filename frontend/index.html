@@ -151,7 +151,7 @@
 
       // 3) Login OneSignal (external_user_id)
       OneSignalDeferred.push(async function (OneSignal) {
-        await OneSignal.login(String(idUsuario));
+        await OneSignal.login("OS_" + String(idUsuario));
         if (OneSignal.User?.PushSubscription?.optIn) {
           await OneSignal.User.PushSubscription.optIn();
         }
@@ -183,6 +183,7 @@
 
       if (idUsuario) {
         console.log("usuario logeado",idUsuario)
+        console.log("usuario a asignar", "OS" + idUsuario)
         localStorage.setItem("id_usuario", String(idUsuario));
 
         // 3) OneSignal: intentar vincular (NO await para no bloquear)
