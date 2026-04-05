@@ -66,7 +66,7 @@
 
       <div class="resource-card-body">
         <div id="alertBox" class="alert d-none" role="alert"></div>
-
+      <div id="reportContent">
         <!-- KPIs -->
         <div class="section-title">Tareas</div>
         <div class="col-md-12 contenedor-fechas">
@@ -78,7 +78,7 @@
               <label class="form-label" for="fecha_limite">Fecha hasta</label>
               <input id="fecha_fin" type="date" class="form-control">
           </div>
-        </div>
+        </div>        
         <div class="kpi-grid">
           <div class="kpi">
             <div class="label">Total</div>
@@ -197,7 +197,7 @@
             <div class="hint">No disponibles temporalmente</div>
           </div>
         </div>
-
+      </div>
       </div>
     </div>
   </div>
@@ -212,6 +212,10 @@
 
   <script src="../../js/reportes.service.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"
+        integrity="sha512-GsLlZN/3F2ErC5ifS5QtgpiJtWd43JWSuIgh7mbzZ8zBps+dvLusV+eNQATqgA/HdeKFVgA5v3S/cIrLF7QnIg=="
+        crossorigin="anonymous"
+        referrerpolicy="no-referrer"></script>
 
   <script>
     requireAuthOrRedirect();
@@ -459,11 +463,114 @@
   });
 </script>
 
+<script>
+  function formatDateForFile(value) {
+    if (!value) return "";
+    return String(value).replaceAll("-", "");
+  }
+
+  async function generarPdfDashboard() {
+    const element = document.getElementById("reportContent");
+    if (!element) {
+      alert("No se encontró el contenido del reporte para exportar.");
+      return;
+    }
+
+    const fechaDesde = document.getElementById("fechaDesde")?.value || "";
+    const fechaHasta = document.getElementById("fechaHasta")?.value || "";
+
+    const suffix = [
+      formatDateForFile(fechaDesde),
+      formatDateForFile(fechaHasta)
+    ].filter(Boolean).join("_");
+
+    const filename = suffix
+      ? `dashboard_report_${suffix}.pdf`
+      : "dashboard_report.pdf";
+
+    const opt = {
+      margin: [10, 10, 10, 10],
+      filename,
+      image: { type: "jpeg", quality: 0.98 },
+      html2canvas: {
+        scale: 2,
+        useCORS: true,
+        backgroundColor: "#ffffff"
+      },
+      jsPDF: {
+        unit: "mm",
+        format: "a4",
+        orientation: "portrait"
+      },
+      pagebreak: {
+        mode: ["css", "legacy"]
+      }
+    };
+
+    try {
+      const btn = document.getElementById("btnPdf");
+      if (btn) {
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Generando PDF...';
+      }
+
+      await html2pdf().set(opt).from(element).save();
+    } catch (error) {
+      console.error(error);
+      alert("No se pudo generar el PDF.");
+    } finally {
+      const btn = document.getElementById("btnPdf");
+      if (btn) {
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fa-solid fa-file-pdf"></i>';
+      }
+    }
+  }
+
+  document.getElementById("btnPdf")?.addEventListener("click", generarPdfDashboard);
+</script>
+
 <style>
   .chart-box{
     position: relative;
     width: 100%;
     height: 320px;
+  }
+</style>
+<style>
+  #reportContent {
+    background: #ffffff;
+    padding: 20px;
+  }
+
+  .pdf-no-print {
+    display: inline-flex;
+  }
+
+  .pdf-break-inside-avoid,
+  .card,
+  .chart-card,
+  .table-responsive {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+
+  @media print {
+    .pdf-no-print,
+    .btn,
+    .sidebar,
+    .topbar {
+      display: none !important;
+    }
+
+    body {
+      background: #fff !important;
+    }
+
+    #reportContent {
+      padding: 0 !important;
+      margin: 0 !important;
+    }
   }
 </style>
 </body>
