@@ -231,7 +231,7 @@
       }
     
       try {
-        await OneSignal.login("OS_"+String(idUsuario));
+        await OneSignal.login(String(idUsuario));
         console.log("✅ External ID vinculado:", idUsuario);
     
         // Espera breve y muestra estado interno (esto es más confiable que mirar el dashboard al instante)
