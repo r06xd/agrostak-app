@@ -70,8 +70,8 @@ def asignarRecursoTarea(id_recurso: int, id_tarea: int, db: Session = Depends(ge
     return recurso_service.asignarRecursoTarea(db, id_recurso, id_tarea)
 
 @router.post("/sendNotification/{id_recurso}/{estado}", response_model=bool, status_code=status.HTTP_201_CREATED)
-def asignarRecursoTarea(id_recurso: int, estado: str):
-    return recurso_service.enviarNotificacion(estado, id_recurso)
+def asignarRecursoTarea(id_recurso: int, estado: str, db: Session = Depends(get_session)):
+    return recurso_service.enviarNotificacion(db, estado, id_recurso)
 
 @router.get("/alertas/resumen", response_model=RecursoAlertasResumen)
 def obtener_alertas_resumen(db: Session = Depends(get_session)):
