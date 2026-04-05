@@ -22,8 +22,8 @@ async function recursosDelete(id) {
   return apiRequest(`${epRecursos()}/${encodeURIComponent(id)}`, { method: "DELETE" });
 }
 
-async function enviarNotificacion(id_recurso,estado)
+async function enviarNotificacion(id,estado)
 {
   console.log('envia notificacion');
-  return apiRequest(`${epRecursos()}/sendNotification/${encodeURIComponent(id_recurso)}/${encodeURIComponent(estado)}`, { method: "POST" });
+  return apiRequest(`${epRecursos()}/sendNotification/${encodeURIComponent(id)}/${encodeURIComponent(estado)}`, { method: "POST" });
 }
