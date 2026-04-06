@@ -43,11 +43,24 @@ class RecursoRepository:
         self.db.commit()
         return True
 
-    def asignarRecursoTarea(self, id_recurso: int, id_tarea: int) -> bool:
-        recursoTarea = RecursoTareaORM(id_recurso=id_recurso, id_tarea=id_tarea)
+    def asignarRecursoTarea(self, id_recurso: int, id_tarea: int, cantidad: int) -> bool:
+        recursoTarea = RecursoTareaORM(id_recurso=id_recurso, id_tarea=id_tarea, cantidad_usada=cantidad)
         self.db.add(recursoTarea)
         self.db.commit()
         return True
+    def eliminarRecursoTarea(self, id_recurso: int, id_tarea: int) -> bool:
+        recursoTarea = self.obtenerRecursoPorTareaYRecurso(id_tarea, id_recurso)
+        if not recursoTarea:
+            return False
+        self.db.delete(recursoTarea)
+        self.db.commit()
+        return True
+    
+    def obtenerRecursoPorTarea(self, id_tarea: int) -> List[RecursoTareaORM]:
+        return self.db.query(RecursoTareaORM).filter(RecursoTareaORM.id_tarea == id_tarea)
+    
+    def obtenerRecursoPorTareaYRecurso(self, id_tarea: int, id_recurso: int) -> RecursoTareaORM:
+        return self.db.query(RecursoTareaORM).filter(RecursoTareaORM.id_tarea == id_tarea and RecursoTareaORM.id_recurso == id_recurso).first()
     
     def listar_insumos_por_acabarse(self, limite: int = 20) -> List[RecursoORM]:
         return (

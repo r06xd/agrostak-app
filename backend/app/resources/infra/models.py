@@ -14,6 +14,7 @@ class RecursoORM(Base):
     cantidad_disponible = Column(Numeric(10, 2), nullable=False, default=0)
     ubicacion = Column(String(100))
     estado = Column(Enum(EstadoRecurso), nullable=False, default=EstadoRecurso.operativo)
+    cantidad_existente = Column(Numeric(10, 2), nullable=False, default=0)
 
     # NUEVO
     fecha_reparacion = Column(

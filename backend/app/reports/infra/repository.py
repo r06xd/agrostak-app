@@ -17,10 +17,10 @@ class ReportsRepository:
         # ---- FILTRO DINÁMICO ----
         filtros = []
         if fecha_inicio:
-            filtros.append(TareaORM.fecha_fin_prog >= fecha_inicio)
+            filtros.append(func.date(TareaORM.fecha_creacion) >= fecha_inicio)
 
         if fecha_fin:
-            filtros.append(TareaORM.fecha_fin_prog <= fecha_fin)
+            filtros.append(func.date(TareaORM.fecha_creacion) <= fecha_fin)
 
         # ---- QUERY TAREAS ----
         query_tareas = self.db.query(
@@ -49,7 +49,7 @@ class ReportsRepository:
         # ---- RECURSOS (sin filtro por ahora) ----
         recursos = self.db.query(
             func.count(RecursoORM.id_recurso).label("total"),
-            func.sum(case((RecursoORM.cantidad_disponible <= 0, 1), else_=0)).label("sin_stock"),
+            func.sum(case((RecursoORM.cantidad_disponible <= 0, 2), else_=0)).label("sin_stock"),
             func.sum(case((RecursoORM.estado == "mantenimiento", 1), else_=0)).label("mantenimiento"),
         ).one()
 

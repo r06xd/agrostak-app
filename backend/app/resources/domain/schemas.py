@@ -13,6 +13,7 @@ class RecursoBase(BaseModel):
     cantidad_disponible: Decimal = Field(default=0)
     ubicacion: Optional[str] = Field(None, max_length=100)
     estado: EstadoRecurso = EstadoRecurso.operativo
+    cantidad_existente: Decimal = Field(default=0)
 
 
 class RecursoCreate(RecursoBase):
@@ -27,6 +28,7 @@ class RecursoUpdate(BaseModel):
     cantidad_disponible: Optional[Decimal] = None
     ubicacion: Optional[str] = Field(None, max_length=100)
     estado: Optional[EstadoRecurso] = None
+    cantidad_existente: Decimal = Field(default=0)
 
 
 class RecursoRead(RecursoBase):

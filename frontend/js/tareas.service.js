@@ -58,9 +58,9 @@ async function getRecursos(){
 
 }
 
-async function tareasAsignarRecurso(id_tarea, id_recurso) {
+async function tareasAsignarRecurso(id_tarea, id_recurso, cantidad) {
   return apiRequest(
-    `/recursos/assignResource/${encodeURIComponent(id_tarea)}/${encodeURIComponent(id_recurso)}`,
+    `/recursos/assignResource/${encodeURIComponent(id_tarea)}/${encodeURIComponent(id_recurso)}/${encodeURIComponent(cantidad)}`,
     {
       method: "POST",
       auth: true

@@ -28,12 +28,14 @@ def obtener_recurso(db: Session, id_recurso: int) -> Optional[RecursoRead]:
 
 def crear_recurso(db: Session, data: RecursoCreate) -> RecursoRead:
     repo = RecursoRepository(db)
+    data.cantidad_existente = data.cantidad_disponible
     recurso = repo.crear(data)
     return RecursoRead.from_orm(recurso)
 
 
 def actualizar_recurso(db: Session, id_recurso: int, data: RecursoUpdate) -> Optional[RecursoRead]:
     repo = RecursoRepository(db)
+    data.cantidad_existente = data.cantidad_disponible
     recurso = repo.actualizar(id_recurso, data)
     if not recurso:
         return None
@@ -44,15 +46,21 @@ def eliminar_recurso(db: Session, id_recurso: int) -> bool:
     repo = RecursoRepository(db)
     return repo.eliminar(id_recurso)
 
-def asignarRecursoTarea(db: Session, id_recurso: int, id_tarea: int) -> bool:
+def asignarRecursoTarea(db: Session, id_recurso: int, id_tarea: int, cantidad: int) -> bool:
     repo = RecursoRepository(db)
-    return repo.asignarRecursoTarea(id_recurso, id_tarea)
+    repo.eliminarRecursoTarea(id_recurso, id_tarea)
+    recursoActual = repo.obtener(id_recurso)
+    recursoActual.cantidad_disponible -= cantidad
+    repo.actualizar(id_recurso, RecursoUpdate(cantidad_disponible=recursoActual.cantidad_disponible))
+    return repo.asignarRecursoTarea(id_recurso, id_tarea, cantidad)
+
+def obtenerRecursoPorTarea(db: Session, id_tarea: int):
+    repo = RecursoRepository(db)
+    return repo.obtenerRecursoPorTarea(id_tarea)
 
 def enviarNotificacion(db: Session,estado: str, id_recurso: int):
     repoIdentity = IdentityRepository(db)
     id_usuario = repoIdentity.get_user_admin().id_usuario
-    print('usuario a enviar la notificacion')
-    print(id_usuario)
     send_resource_status_push(id_usuario, estado, id_recurso)
     return True
 

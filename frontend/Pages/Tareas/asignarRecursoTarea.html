@@ -218,6 +218,9 @@
       taskDesc.textContent = `Descripción: ${desc || "—"}`;
     }
 
+    cantidad.addEventListener("input", validarCantidad);
+    id_recurso.addEventListener("change", validarCantidad);
+
     document.getElementById("btnVolver").addEventListener("click", () => {
       window.location.href = "./listarTareas.html";
     });
@@ -276,8 +279,20 @@
       id_recurso.innerHTML = `<option value="">Seleccione</option>` + recursos.map(r => {
         const rid = r.id_recurso ?? r.id ?? r.idRecurso;
         const nombre = r.nombre ?? r.descripcion ?? r.title ?? ("Recurso " + rid);
-        return `<option value="${rid}">${nombre}</option>`;
+        return `<option value="${rid}" data-cantidad-maxima="${r.cantidad_disponible}">${nombre}</option>`;
       }).join("");
+    }
+
+    function validarCantidad() {
+      console.log('Entra a validar');
+      const selectedOption = id_recurso.options[id_recurso.selectedIndex];
+      const max = parseFloat(selectedOption.dataset.cantidadMaxima);
+      const cantidadFlo = parseFloat(cantidad.value);
+
+      if (cantidadFlo > max) {
+        alert(`No puedes ingresar más de ${max}`);
+        cantidad.value = max; // opcional: corregir automáticamente
+      }
     }
 
     document.getElementById("asignarRecursoForm").addEventListener("submit", async (e) => {
@@ -291,7 +306,7 @@
           cantidad: Number(cantidad.value)
         };
 
-        await tareasAsignarRecurso(id_tarea.value, id_recurso.value);
+        await tareasAsignarRecurso(id_tarea.value, id_recurso.value, cantidad.value);
 
         showAlert("Recurso asignado correctamente ✅", "success");
         setTimeout(() => window.location.href = "./listarTareas.html", 600);

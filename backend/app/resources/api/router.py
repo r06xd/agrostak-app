@@ -65,9 +65,9 @@ def eliminar_recurso(id_recurso: int, db: Session = Depends(get_session)):
         )
     return None
 
-@router.post("/assignResource/{id_tarea}/{id_recurso}", response_model=bool, status_code=status.HTTP_201_CREATED)
-def asignarRecursoTarea(id_recurso: int, id_tarea: int, db: Session = Depends(get_session)):
-    return recurso_service.asignarRecursoTarea(db, id_recurso, id_tarea)
+@router.post("/assignResource/{id_tarea}/{id_recurso}/{cantidad}", response_model=bool, status_code=status.HTTP_201_CREATED)
+def asignarRecursoTarea(id_recurso: int, id_tarea: int, cantidad:int, db: Session = Depends(get_session)):
+    return recurso_service.asignarRecursoTarea(db, id_recurso, id_tarea, cantidad)
 
 @router.post("/sendNotification/{id_recurso}/{estado}", response_model=bool, status_code=status.HTTP_201_CREATED)
 def asignarRecursoTarea(id_recurso: int, estado: str, db: Session = Depends(get_session)):

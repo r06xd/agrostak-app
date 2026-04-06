@@ -10,9 +10,11 @@ from app.tasks.domain.schemas import (
     ComentarioCreate, ComentarioRead
 )
 from app.tasks.infra.repository import TasksRepository
+from app.resources.infra.repository import RecursoRepository
 from app.tasks.infra.models import TareaORM, AsignacionTareaORM, HistorialEstadoTareaORM, ComentarioTareaORM
 from app.tasks.domain.enums import EstadoTarea
 from app.notifications.infra.onesignal_client import send_task_assigned_push
+from app.resources.domain.schemas import RecursoUpdate
 
 
 def crear_tarea(db: Session, data: TareaCreate, id_creador: int) -> TareaRead:
@@ -253,6 +255,7 @@ def mis_tareas(db: Session, id_usuario: int) -> list[TareaRead]:
 
 def cambiar_estado(db: Session, id_tarea: int, data: CambiarEstadoRequest, id_usuario: int) -> TareaRead:
     repo = TasksRepository(db)
+    recursoRepo = RecursoRepository(db)
     tarea = repo.get_tarea(id_tarea)
     if not tarea:
         raise HTTPException(status_code=404, detail="Tarea no encontrada.")
@@ -263,6 +266,11 @@ def cambiar_estado(db: Session, id_tarea: int, data: CambiarEstadoRequest, id_us
     # reglas simples
     if data.estado == EstadoTarea.completada:
         tarea.porcentaje_avance = 100
+        recursos = recursoRepo.obtenerRecursoPorTarea(id_tarea)
+        for recurso in recursos:
+            recursoUtilizado = recursoRepo.obtener(recurso.id_recurso)
+
+            recursoRepo.actualizar(recursoUtilizado.id_recurso, RecursoUpdate(cantidad_disponible=recursoUtilizado.cantidad_disponible + recurso.cantidad_usada))
         if not tarea.fecha_fin_real:
             tarea.fecha_fin_real = datetime.utcnow()
 
