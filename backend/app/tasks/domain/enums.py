@@ -11,3 +11,4 @@ class EstadoTarea(str, Enum):
     en_progreso = "en_progreso"
     completada = "completada"
     cancelada = "cancelada"
+    eliminada = "eliminada"

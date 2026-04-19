@@ -264,12 +264,11 @@ def cambiar_estado(db: Session, id_tarea: int, data: CambiarEstadoRequest, id_us
     tarea.estado = data.estado
 
     # reglas simples
-    if data.estado == EstadoTarea.completada:
+    if data.estado in (EstadoTarea.completada, EstadoTarea.eliminada):
         tarea.porcentaje_avance = 100
         recursos = recursoRepo.obtenerRecursoPorTarea(id_tarea)
         for recurso in recursos:
             recursoUtilizado = recursoRepo.obtener(recurso.id_recurso)
-
             recursoRepo.actualizar(recursoUtilizado.id_recurso, RecursoUpdate(cantidad_disponible=recursoUtilizado.cantidad_disponible + recurso.cantidad_usada))
         if not tarea.fecha_fin_real:
             tarea.fecha_fin_real = datetime.utcnow()

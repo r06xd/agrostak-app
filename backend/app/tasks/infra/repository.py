@@ -35,7 +35,7 @@ class TasksRepository:
                 UsuarioORM.id_usuario == AsignacionTareaORM.id_usuario
             )
             .filter(
-                (AsignacionTareaORM.activo == 1) | (AsignacionTareaORM.activo.is_(None))
+                ((AsignacionTareaORM.activo == 1) | (AsignacionTareaORM.activo.is_(None))) & (TareaORM.estado != "eliminada")
             )
             .all()
         )   

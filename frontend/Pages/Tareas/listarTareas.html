@@ -317,7 +317,8 @@
         if(!ok) return;
 
         try{
-          await tareasDelete(id);
+          //await tareasDelete(id);
+          await actualizarEstadoTarea(id, "eliminada"); await cargar();
           tareas = tareas.filter(t => String(t.id_tarea ?? t.id ?? t.idTarea) !== String(id));
           aplicarFiltros();
         }catch(err){
