@@ -264,6 +264,7 @@
         setText("r_total", d.recursos_total);
         setText("r_sin_stock", d.recursos_sin_stock);
         setText("r_mantenimiento", d.recursos_en_mantenimiento);
+        await cargarDashboard();
 
       }catch(err){
         showAlert(err.message || "No se pudo cargar el resumen del dashboard");
@@ -430,10 +431,12 @@
 
   async function cargarDashboard() {
     try {
-      const fecha_inicio = document.getElementById("fecha_inicio")?.value || null;
-      const fecha_fin = document.getElementById("fecha_fin")?.value || null;
+      const params = new URLSearchParams({
+            fecha_inicio: document.getElementById('fecha_inicio').value,
+            fecha_fin: document.getElementById('fecha_fin').value
+          });
 
-      const data = await dashboardSummaryGet(fecha_inicio, fecha_fin);
+      const data = await dashboardSummaryGet(params);
       const summary = data?.data || data || {};
 
       setText("tareas_total", summary.tareas_total || 0);
